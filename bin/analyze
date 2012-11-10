@@ -1,0 +1,9 @@
+#!/bin/sh
+
+./js analyzer/js/analyzer.js
+
+dot -Tsvg dependencies.dot -o js-dependencies.svg
+dot -Tsvg openajax-events.dot -o openajax-events.svg
+
+rm dependencies.dot
+rm openajax-events.dot
