@@ -167,6 +167,28 @@ steal('./esprima.js', './helpers.js', function () {
             cloc: cloc
         });
     },
+    countMethods = function (ast, success) {
+        var ret = 0;
+
+        walker.subscribe(['FunctionExpression'], function (ast) {
+            ret++;
+        });
+
+        walker.callbacks.push(function () {
+            success(ret);
+        });
+    },
+    analyzeClassName = function (ast, success) {
+        var ret;
+        walker.subscribe('CallExpression', function (ast) {
+            if (!ret && isClassName(ast)) {
+                ret = getClassName(ast);
+            }
+        });
+        walker.callbacks.push(function () {
+            success(ret);
+        });
+    },
     getClassName = function (ast) {
         return '' + ast['arguments'][0].value;
     },
@@ -268,12 +290,18 @@ steal('./esprima.js', './helpers.js', function () {
     };
     var esprima_analyzer = function (options, files) {
         this.globalDepStat = {};
+        this.globalLoc = 0;
+        this.globalCycComp = 0;
+        this.globalMethodCount = 0;
+        this.globalClassCount = 0;
+
         this.options = options;
         this.print = outputDrivers.printFile;
         this.depFile = files.depGraph;
         this.checkStyleFile = files.checkStyle;
         this.depMatrix = files.depMatrix;
         this.eventFile = files.eventGraph;
+        this.statsFile = files.statistics;
         this.print('digraph Dependencies {\n', {file: this.depFile});
         this.print('    rankdir=LR\n', {file: this.depFile});
         this.print('digraph Dependencies {\n', {file: this.eventFile});
@@ -287,18 +315,31 @@ steal('./esprima.js', './helpers.js', function () {
         analyzeCycComp(ast, function (cycStat) {
             var i;
             for (i in cycStat) {
-                if (cycStat[i] && cycStat[i].complexity > 10) {
-                    me.print('    <error line="' + cycStat[i].line + '" column="' +
-                        cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
-                        cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
-                        {file: me.checkStyleFile}
-                    );
+                if (cycStat[i]) {
+                    me.globalCycComp += cycStat[i].complexity;
+                    if (cycStat[i].complexity > 10) {
+                        me.print('    <error line="' + cycStat[i].line + '" column="' +
+                            cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
+                            cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
+                            {file: me.checkStyleFile}
+                        );
+                    }
                 }
             }
         });
 
         analyzeLoc(ast, function (locStat) {
+            me.globalLoc += locStat.loc;
+        });
 
+        countMethods(ast, function (count) {
+            me.globalMethodCount += count;
+        });
+
+        analyzeClassName(ast, function (name) {
+            if (name) {
+                me.globalClassCount++;
+            }
         });
 
         analyzeShortVarNames(ast, this.options.analyzerOpts.shortVarWhitelist, function (shortVarStat) {
@@ -463,6 +504,65 @@ steal('./esprima.js', './helpers.js', function () {
 
         this.print('}', {file: this.eventFile});
         this.eventFile.close();
+
+
+        var cycPerLoc = (this.globalCycComp / this.globalLoc).toFixed(2);
+        var cycPerLocState = cycPerLoc < 0.16 ? 'good' : cycPerLoc > 0.24 ? 'bad' : 'ok';
+        var locPerMc = (this.globalLoc / this.globalMethodCount).toFixed(2);
+        var locPerMcState = locPerMc < 7 ? 'good' : locPerMc > 13 ? 'bad' : 'ok';
+        var mcPerCc = (this.globalMethodCount / this.globalClassCount).toFixed(2);
+        var mcPerCcState = mcPerCc < 4 ? 'good' : mcPerCc > 10 ? 'bad' : 'ok';
+
+        this.print('<!DOCTYPE html>' +
+            '<html>' +
+            '<head>' +
+            '<style>' +
+            '.good {' +
+            '    background-color: #0c0;' +
+            '}' +
+            '.ok {' +
+            '    background-color: #0cc;' +
+            '}' +
+            '.bad {' +
+            '    background-color: #c00;' +
+            '}' +
+            '</style>' +
+            '</head>' +
+            '<body>' +
+            '<table>' +
+            '<tr>' +
+            '<td>CYC</td>' +
+            '<td>' + this.globalCycComp + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>LOC</td>' +
+            '<td>' + this.globalLoc + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>Methods</td>' +
+            '<td>' + this.globalMethodCount + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>Classes</td>' +
+            '<td>' + this.globalClassCount + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>CYC/LOC</td>' +
+            '<td class="' + cycPerLocState + '">' + cycPerLoc + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>LOC/Methods</td>' +
+            '<td class="' + locPerMcState + '">' + locPerMc + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>Methods/Classes</td>' +
+            '<td class="' + mcPerCcState + '">' + mcPerCc + '</td>' +
+            '</tr>' +
+            '</table>' +
+            '</body>' +
+            '</html>',
+        {file: this.statsFile});
+        this.statsFile.close();
     };
 
     exports.esprima_analyzer = esprima_analyzer;

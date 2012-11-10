@@ -18,6 +18,9 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             if (!analyzers.data.files.depMatrix) {
                 analyzers.data.files.depMatrix = outputDrivers.openFile('js-dependencies.html');
             }
+            if (!analyzers.data.files.statistics) {
+                analyzers.data.files.statistics = outputDrivers.openFile('js-statistics.html');
+            }
             return new analyzers[type](options, analyzers.data.files);
         },
         startFile: function (filename) {
