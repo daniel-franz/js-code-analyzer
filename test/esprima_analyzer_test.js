@@ -145,6 +145,7 @@ steal('../js/esprima_analyzer.js', function () {
             'Test.ClassName(\'Test.SecondDerivedClassName\', {\n' +
                 'testProp: Test.DerivedClassName,\n' +
                 'testMethod2: function () {\n' +
+                    'var testVar = can.control;\n' +
                     'return new can.construct();\n' +
                 '}\n' +
             '}, {\n' +
@@ -157,7 +158,8 @@ steal('../js/esprima_analyzer.js', function () {
 
         equal(this.depGraph[4], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
         equal(this.depGraph[5], '    \"Test.SecondDerivedClassName\" -> \"Test.DerivedClassName\" [];\n');
-        equal(this.depGraph[6], '    \"Test.SecondDerivedClassName\" -> \"can.construct\" [arrowhead=odot];\n');
+        equal(this.depGraph[6], '    \"Test.SecondDerivedClassName\" -> \"can.control\" [];\n');
+        equal(this.depGraph[7], '    \"Test.SecondDerivedClassName\" -> \"can.construct\" [arrowhead=odot];\n');
     });
 
     test('OpenAjax events', function () {
