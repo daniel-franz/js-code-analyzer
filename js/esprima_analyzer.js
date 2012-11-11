@@ -296,16 +296,15 @@ steal('./esprima.js', './helpers.js', function () {
         this.globalClassCount = 0;
 
         this.options = options;
-        this.print = outputDrivers.printFile;
         this.depFile = files.depGraph;
         this.checkStyleFile = files.checkStyle;
         this.depMatrix = files.depMatrix;
         this.eventFile = files.eventGraph;
         this.statsFile = files.statistics;
-        this.print('digraph Dependencies {\n', {file: this.depFile});
-        this.print('    rankdir=LR\n', {file: this.depFile});
-        this.print('digraph Dependencies {\n', {file: this.eventFile});
-        this.print('    rankdir=LR\n', {file: this.eventFile});
+        this.depFile.print('digraph Dependencies {\n');
+        this.depFile.print('    rankdir=LR\n');
+        this.eventFile.print('digraph Dependencies {\n');
+        this.eventFile.print('    rankdir=LR\n');
     };
 
     esprima_analyzer.prototype.parse = function (out) {
@@ -317,8 +316,8 @@ steal('./esprima.js', './helpers.js', function () {
             for (i in cycStat) {
                 if (cycStat[i]) {
                     me.globalCycComp += cycStat[i].complexity;
-                    if (cycStat[i].complexity > 10) {
-                        me.print('    <error line="' + cycStat[i].line + '" column="' +
+                    if (cycStat[i].complexity > me.options.analyzerOpts.cycCompThreshold) {
+                        me.checkStyleFile.print('    <error line="' + cycStat[i].line + '" column="' +
                             cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
                             cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
                             {file: me.checkStyleFile}
@@ -346,7 +345,7 @@ steal('./esprima.js', './helpers.js', function () {
             var i;
             for (i = 0; i < shortVarStat.length; i++) {
                 if (shortVarStat[i]) {
-                    me.print('    <error line="' + shortVarStat[i].line + '" column="' +
+                    me.checkStyleFile.print('    <error line="' + shortVarStat[i].line + '" column="' +
                         shortVarStat[i].column + '" severity="info" message="Short variable name: ' +
                         shortVarStat[i].name + '" source="esprima.shortVar" />\n',
                         {file: me.checkStyleFile}
@@ -371,7 +370,7 @@ steal('./esprima.js', './helpers.js', function () {
                     if (depStat[i].depends[j].stat) {
                         style.push('color=red');
                     }
-                    me.print(
+                    me.depFile.print(
                         '    "' + i + '" -> "' + j + '" [' + style.join(',') + '];\n',
                         {file: me.depFile}
                     );
@@ -384,16 +383,16 @@ steal('./esprima.js', './helpers.js', function () {
 
             for (i in eventStat) {
                 for (j in eventStat[i].emits) {
-                    me.print('    "' + i + '" -> "' + j + '";\n', {file: me.eventFile});
+                    me.eventFile.print('    "' + i + '" -> "' + j + '";\n');
                     eventList[j] = true;
                 }
                 for (j in eventStat[i].receives) {
-                    me.print('    "' + j + '" -> "' + i + '";\n', {file: me.eventFile});
+                    me.eventFile.print('    "' + j + '" -> "' + i + '";\n');
                     eventList[j] = true;
                 }
             }
             for (i in eventList) {
-                me.print('    "' + i + '" [shape=box];\n', {file: me.eventFile});
+                me.eventFile.print('    "' + i + '" [shape=box];\n');
             }
         });
 
@@ -404,7 +403,7 @@ steal('./esprima.js', './helpers.js', function () {
         walker.clear();
     };
     esprima_analyzer.prototype.destroy = function () {
-        this.print('<!DOCTYPE html>' +
+        this.depMatrix.print('<!DOCTYPE html>' +
             '<html>' +
             '<head>' +
             '<style>' +
@@ -438,9 +437,9 @@ steal('./esprima.js', './helpers.js', function () {
             '</style>' +
             '<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>' +
             '<script>' +
-            '', {file: this.depMatrix});
-        this.print('var depData = ' + JSON.stringify(this.globalDepStat) + ';', {file: this.depMatrix});
-        this.print('$().ready(function () {' +
+            '');
+        this.depMatrix.print('var depData = ' + JSON.stringify(this.globalDepStat) + ';');
+        this.depMatrix.print('$().ready(function () {' +
             'var getAllClassNames = function() {' +
             'var tmp = {}, ret = [];' +
             'for (var i in depData) {' +
@@ -496,13 +495,13 @@ steal('./esprima.js', './helpers.js', function () {
             '<body>' +
             '<table class="matrix"></table>' +
             '</body>' +
-            '</html>', {file: this.depMatrix});
+            '</html>');
         this.depMatrix.close();
 
-        this.print('}', {file: this.depFile});
+        this.depFile.print('}');
         this.depFile.close();
 
-        this.print('}', {file: this.eventFile});
+        this.eventFile.print('}');
         this.eventFile.close();
 
 
@@ -513,7 +512,7 @@ steal('./esprima.js', './helpers.js', function () {
         var mcPerCc = (this.globalMethodCount / this.globalClassCount).toFixed(2);
         var mcPerCcState = mcPerCc < 4 ? 'good' : mcPerCc > 10 ? 'bad' : 'ok';
 
-        this.print('<!DOCTYPE html>' +
+        this.statsFile.print('<!DOCTYPE html>' +
             '<html>' +
             '<head>' +
             '<style>' +

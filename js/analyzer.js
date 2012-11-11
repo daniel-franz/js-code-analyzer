@@ -27,6 +27,7 @@ steal('analyzer/js/analyze.js').then(function () {
             ]
         },
         analyzerOpts: {
+            cycCompThreshold: 10,
             shortVarWhitelist: ['me', 'x', 'y']
         },
         pathPrefix: '',

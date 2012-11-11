@@ -20,6 +20,14 @@ var outputDrivers = {
     },
     openFile: function (filename) {
         var fstream = new java.io.FileWriter(filename, false);
-        return new java.io.BufferedWriter(fstream);
+        var handle = new java.io.BufferedWriter(fstream);
+        return {
+            print: function (text) {
+                outputDrivers.printFile(text, {file: handle});
+            },
+            close: function () {
+                handle.close();
+            }
+        };
     }
 };

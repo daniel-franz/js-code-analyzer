@@ -24,12 +24,10 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             return new analyzers[type](options, analyzers.data.files);
         },
         startFile: function (filename) {
-            outputDrivers.printFile(
-                '  <file name="' + escapeHTML(filename) + '">\n', {file: analyzers.data.files.checkStyle}
-            );
+            analyzers.data.files.checkStyle.print('  <file name="' + escapeHTML(filename) + '">\n');
         },
         stopFile: function (filename) {
-            outputDrivers.printFile('  </file>\n', {file: analyzers.data.files.checkStyle});
+            analyzers.data.files.checkStyle.print('  </file>\n');
         },
         jsLint: exports.jsLint_analyzer,
         esprima: exports.esprima_analyzer
