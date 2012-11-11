@@ -49,8 +49,9 @@ steal('./esprima.js', './helpers.js', function () {
     parseMemberExpression = function (ast, everything) {
         var ret = [];
         traverse(ast, function (ast) {
-            if (ast.type === 'Identifier' && (everything ||
-                (ast.name.match(/^[A-Z]/) || ast.name === '$' || ast.name === 'jQuery' || ast.name === 'can'))
+            if (ast.type === 'Identifier' && (everything || ast.name.match(/^[A-Z]/) || ast.name === '$' ||
+                ast.name === 'jQuery' || ast.name === 'can' ||
+                (ret[0] === 'can' && (ast.name === 'construct' || ast.name === 'control')))
             ) {
                 ret.push(ast.name);
             }
@@ -212,7 +213,8 @@ steal('./esprima.js', './helpers.js', function () {
                     depends: {}
                 };
                 inherit = true;
-            } else if (className) {
+            }
+            if (className) {
                 tmp = parseMemberExpression({ast: ast.callee});
                 if (tmp && tmp !== '$') {
                     ret[className].depends[tmp] = ret[className].depends[tmp] || {};
