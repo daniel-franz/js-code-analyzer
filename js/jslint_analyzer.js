@@ -38,8 +38,8 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
 
         if (data.unused) {
             for (i = 0; i < data.unused.length; i++) {
-                this.checkStyleFile.print('    <error line="' + data.unused[i].line + '" column="' +
-                    data.unused[i].character + '" severity="info" message="Unused variable: ' +
+                this.checkStyleFile.print('    <error line="' + data.unused[i].line + '" column="0" ' +
+                    'severity="info" message="Unused variable: ' +
                     escapeHTML(data.unused[i].name) + '" source="JSlint.Unused"/>\n'
                 );
             }
