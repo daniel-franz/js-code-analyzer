@@ -7,19 +7,19 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
                 analyzers.data.files = {};
             }
             if (!analyzers.data.files.depGraph) {
-                analyzers.data.files.depGraph = outputDrivers.openFile('dependencies.dot');
+                analyzers.data.files.depGraph = ioDrivers.openFile('dependencies.dot');
             }
             if (!analyzers.data.files.eventGraph) {
-                analyzers.data.files.eventGraph = outputDrivers.openFile('openajax-events.dot');
+                analyzers.data.files.eventGraph = ioDrivers.openFile('openajax-events.dot');
             }
             if (!analyzers.data.files.checkStyle) {
-                analyzers.data.files.checkStyle = outputDrivers.openFile('checkstyle_js.xml');
+                analyzers.data.files.checkStyle = ioDrivers.openFile('checkstyle_js.xml');
             }
             if (!analyzers.data.files.depMatrix) {
-                analyzers.data.files.depMatrix = outputDrivers.openFile('js-dependencies.html');
+                analyzers.data.files.depMatrix = ioDrivers.openFile('js-dependencies.html');
             }
             if (!analyzers.data.files.statistics) {
-                analyzers.data.files.statistics = outputDrivers.openFile('js-statistics.html');
+                analyzers.data.files.statistics = ioDrivers.openFile('js-statistics.html');
             }
             return new analyzers[type](options, analyzers.data.files);
         },

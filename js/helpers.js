@@ -1,3 +1,5 @@
+/*global: java */
+
 var escapeHTML = function (content) {
     return content.replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -11,22 +13,38 @@ var extend = function (d, s) {
     }
     return d;
 };
-var outputDrivers = {
-    print: function (text, options) {
-        print(text);
-    },
-    printFile: function (text, options) {
-        options.file.write(text);
+var ioDrivers = {
+    openConsole: function () {
+        return {
+            read: function () {
+                var br = new java.io.BufferedReader(new java.io.InputStreamReader(java.lang.System["in"]));
+                try {
+                    return br.readLine();
+                } catch (e) {}
+                return '';
+            },
+            print: function (text) {
+                print(text);
+            },
+            close: function () {}
+        }
     },
     openFile: function (filename) {
-        var fstream = new java.io.FileWriter(filename, false);
-        var handle = new java.io.BufferedWriter(fstream);
+        var handle;
         return {
+            read: function () {
+
+            },
             print: function (text) {
-                outputDrivers.printFile(text, {file: handle});
+                if (!handle) {
+                    handle = new java.io.BufferedWriter(new java.io.FileWriter(filename, false));
+                }
+                handle.write(text);
             },
             close: function () {
-                handle.close();
+                if (handle) {
+                    handle.close();
+                }
             }
         };
     }
