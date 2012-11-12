@@ -1,10 +1,9 @@
 steal('steal/clean/jslint.js', './helpers.js', function () {
     var jsLint_analyzer = function (options, files) {
         this.options = options;
-        this.print = outputDrivers.printFile;
         this.checkStyleFile = files.checkStyle;
-        this.print('<?xml version="1.0" encoding="UTF-8"?>\n', {file: this.checkStyleFile});
-        this.print('<checkstyle version="1.3.0">\n', {file: this.checkStyleFile});
+        this.checkStyleFile.print('<?xml version="1.0" encoding="UTF-8"?>\n');
+        this.checkStyleFile.print('<checkstyle version="1.3.0">\n');
     };
     jsLint_analyzer.prototype.parse = function (out, curFilename) {
         var i;
@@ -28,9 +27,9 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
                     severity = 'error';
                 }
 
-                this.print('    <error line="' + error.line + '" column="' +
+                this.checkStyleFile.print('    <error line="' + error.line + '" column="' +
                     error.character + '" severity="' + severity + '" message="' + escapeHTML(error.reason) +
-                    '" source="JSlint.Error" evidence="' + evidence + '"/>\n', {file: this.checkStyleFile}
+                    '" source="JSlint.Error" evidence="' + evidence + '"/>\n'
                 );
             }
         }
@@ -39,15 +38,15 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
 
         if (data.unused) {
             for (i = 0; i < data.unused.length; i++) {
-                this.print('    <error line="' + data.unused[i].line + '" column="' +
+                this.checkStyleFile.print('    <error line="' + data.unused[i].line + '" column="' +
                     data.unused[i].character + '" severity="info" message="Unused variable: ' +
-                    escapeHTML(data.unused[i].name) + '" source="JSlint.Unused"/>\n', {file: this.checkStyleFile}
+                    escapeHTML(data.unused[i].name) + '" source="JSlint.Unused"/>\n'
                 );
             }
         }
     };
     jsLint_analyzer.prototype.destroy = function () {
-        this.print('</checkstyle>\n', {file: this.checkStyleFile});
+        this.checkStyleFile.print('</checkstyle>\n');
         this.checkStyleFile.close();
     };
 
