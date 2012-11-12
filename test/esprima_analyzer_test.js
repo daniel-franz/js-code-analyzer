@@ -5,6 +5,8 @@ steal('../js/esprima_analyzer.js', function () {
             var mockFile = function (name) {
                 me[name] = [];
                 return {
+                    addHeader: function () {},
+                    addFooter: function () {},
                     read: function () {
                         return '';
                     },
@@ -17,6 +19,10 @@ steal('../js/esprima_analyzer.js', function () {
 
             this.analyzer = new exports.esprima_analyzer({
                 analyzerOpts: {
+                    doStatistics: true,
+                    doDependencies: true,
+                    doOpenAjaxEvents: true,
+                    doCyclomaticComplexity: true,
                     cycCompThreshold: 0
                 }
             }, {
@@ -122,7 +128,7 @@ steal('../js/esprima_analyzer.js', function () {
         );
 
         // inherited => bold
-        equal(this.depGraph[2], '    \"Test.ClassName\" -> \"can.construct\" [style=bold];\n');
+        equal(this.depGraph[0], '    \"Test.ClassName\" -> \"can.construct\" [style=bold];\n');
 
         this.analyzer.parse(
             'Test.ClassName(\'Test.DerivedClassName\', {\n' +
@@ -141,7 +147,7 @@ steal('../js/esprima_analyzer.js', function () {
 
         // inherited => bold
         // static call => red
-        equal(this.depGraph[3], '    \"Test.DerivedClassName\" -> \"Test.ClassName\" [style=bold,color=red];\n');
+        equal(this.depGraph[1], '    \"Test.DerivedClassName\" -> \"Test.ClassName\" [style=bold,color=red];\n');
 
         this.analyzer.parse(
             'Test.ClassName(\'Test.SecondDerivedClassName\', {\n' +
@@ -158,10 +164,10 @@ steal('../js/esprima_analyzer.js', function () {
         // other (variable, property,...) => no style
         // instantiation => arrowhead odot
 
-        equal(this.depGraph[4], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
-        equal(this.depGraph[5], '    \"Test.SecondDerivedClassName\" -> \"Test.DerivedClassName\" [];\n');
-        equal(this.depGraph[6], '    \"Test.SecondDerivedClassName\" -> \"can.control\" [];\n');
-        equal(this.depGraph[7], '    \"Test.SecondDerivedClassName\" -> \"can.construct\" [arrowhead=odot];\n');
+        equal(this.depGraph[2], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
+        equal(this.depGraph[3], '    \"Test.SecondDerivedClassName\" -> \"Test.DerivedClassName\" [];\n');
+        equal(this.depGraph[4], '    \"Test.SecondDerivedClassName\" -> \"can.control\" [];\n');
+        equal(this.depGraph[5], '    \"Test.SecondDerivedClassName\" -> \"can.construct\" [arrowhead=odot];\n');
     });
 
     test('OpenAjax events', function () {
@@ -174,8 +180,8 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.eventGraph[2], '    \"Test.SenderControl\" -> \"test.event\";\n');
-        equal(this.eventGraph[3], '    \"test.event\" [shape=box];\n');
+        equal(this.eventGraph[0], '    \"Test.SenderControl\" -> \"test.event\";\n');
+        equal(this.eventGraph[1], '    \"test.event\" [shape=box];\n');
 
         this.analyzer.parse(
             'can.control(\'Test.ReceiverControl\', {\n' +
@@ -188,8 +194,8 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.eventGraph[4], '    \"test.event\" -> \"Test.ReceiverControl\";\n');
-        equal(this.eventGraph[5], '    \"test.event\" [shape=box];\n');
+        equal(this.eventGraph[2], '    \"test.event\" -> \"Test.ReceiverControl\";\n');
+        equal(this.eventGraph[3], '    \"test.event\" [shape=box];\n');
 
         this.analyzer.parse(
             'can.control(\'Test.SecondReceiverControl\', {\n' +
@@ -202,8 +208,8 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.eventGraph[6], '    \"test.event\" -> \"Test.SecondReceiverControl\";\n');
-        equal(this.eventGraph[7], '    \"test.event\" [shape=box];\n');
+        equal(this.eventGraph[4], '    \"test.event\" -> \"Test.SecondReceiverControl\";\n');
+        equal(this.eventGraph[5], '    \"test.event\" [shape=box];\n');
 
     });
 });

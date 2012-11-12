@@ -303,31 +303,33 @@ steal('./esprima.js', './helpers.js', function () {
         this.depMatrix = files.depMatrix;
         this.eventFile = files.eventGraph;
         this.statsFile = files.statistics;
-        this.depFile.print('digraph Dependencies {\n');
-        this.depFile.print('    rankdir=LR\n');
-        this.eventFile.print('digraph Dependencies {\n');
-        this.eventFile.print('    rankdir=LR\n');
+        this.depFile.addHeader('digraph Dependencies {\n');
+        this.depFile.addHeader('    rankdir=LR\n');
+        this.eventFile.addHeader('digraph Dependencies {\n');
+        this.eventFile.addHeader('    rankdir=LR\n');
     };
 
     esprima_analyzer.prototype.parse = function (out) {
         var me = this;
         var ast = exports.parse(out, {loc: true, comment: true});
 
-        analyzeCycComp(ast, function (cycStat) {
-            var i;
-            for (i in cycStat) {
-                if (cycStat[i]) {
-                    me.globalCycComp += cycStat[i].complexity;
-                    if (cycStat[i].complexity > me.options.analyzerOpts.cycCompThreshold) {
-                        me.checkStyleFile.print('    <error line="' + cycStat[i].line + '" column="' +
-                            cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
-                            cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
-                            {file: me.checkStyleFile}
-                        );
+        if (this.options.analyzerOpts.doCyclomaticComplexity) {
+            analyzeCycComp(ast, function (cycStat) {
+                var i;
+                for (i in cycStat) {
+                    if (cycStat[i]) {
+                        me.globalCycComp += cycStat[i].complexity;
+                        if (cycStat[i].complexity > me.options.analyzerOpts.cycCompThreshold) {
+                            me.checkStyleFile.print('    <error line="' + cycStat[i].line + '" column="' +
+                                cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
+                                cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
+                                {file: me.checkStyleFile}
+                            );
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
         analyzeLoc(ast, function (locStat) {
             me.globalLoc += locStat.loc;
@@ -356,47 +358,50 @@ steal('./esprima.js', './helpers.js', function () {
             }
         });
 
-        analyzeDepMatrix(ast, function (depStat) {
-            var i, j;
-            extend(me.globalDepStat, depStat);
+        if (this.options.analyzerOpts.doOpenAjaxEvents) {
+            analyzeDepMatrix(ast, function (depStat) {
+                var i, j;
+                extend(me.globalDepStat, depStat);
 
-            for (i in depStat) {
-                for (j in depStat[i].depends) {
-                    var style = [];
-                    if (depStat[i].depends[j].inherit) {
-                        style.push('style=bold');
+                for (i in depStat) {
+                    for (j in depStat[i].depends) {
+                        var style = [];
+                        if (depStat[i].depends[j].inherit) {
+                            style.push('style=bold');
+                        }
+                        if (depStat[i].depends[j].instanciate) {
+                            style.push('arrowhead=odot');
+                        }
+                        if (depStat[i].depends[j].stat) {
+                            style.push('color=red');
+                        }
+                        me.depFile.print(
+                            '    "' + i + '" -> "' + j + '" [' + style.join(',') + '];\n'
+                        );
                     }
-                    if (depStat[i].depends[j].instanciate) {
-                        style.push('arrowhead=odot');
-                    }
-                    if (depStat[i].depends[j].stat) {
-                        style.push('color=red');
-                    }
-                    me.depFile.print(
-                        '    "' + i + '" -> "' + j + '" [' + style.join(',') + '];\n',
-                        {file: me.depFile}
-                    );
                 }
-            }
-        });
-        analyzeOpenAjaxEvents(ast, function (eventStat) {
-            var i, j;
-            var eventList = {};
+            });
+        }
+        if (this.options.analyzerOpts.doOpenAjaxEvents) {
+            analyzeOpenAjaxEvents(ast, function (eventStat) {
+                var i, j;
+                var eventList = {};
 
-            for (i in eventStat) {
-                for (j in eventStat[i].emits) {
-                    me.eventFile.print('    "' + i + '" -> "' + j + '";\n');
-                    eventList[j] = true;
+                for (i in eventStat) {
+                    for (j in eventStat[i].emits) {
+                        me.eventFile.print('    "' + i + '" -> "' + j + '";\n');
+                        eventList[j] = true;
+                    }
+                    for (j in eventStat[i].receives) {
+                        me.eventFile.print('    "' + j + '" -> "' + i + '";\n');
+                        eventList[j] = true;
+                    }
                 }
-                for (j in eventStat[i].receives) {
-                    me.eventFile.print('    "' + j + '" -> "' + i + '";\n');
-                    eventList[j] = true;
+                for (i in eventList) {
+                    me.eventFile.print('    "' + i + '" [shape=box];\n');
                 }
-            }
-            for (i in eventList) {
-                me.eventFile.print('    "' + i + '" [shape=box];\n');
-            }
-        });
+            });
+        }
 
         traverse(ast, function (ast, curDepth) {
             walker.publish(ast, curDepth);
@@ -405,7 +410,7 @@ steal('./esprima.js', './helpers.js', function () {
         walker.clear();
     };
     esprima_analyzer.prototype.destroy = function () {
-        this.depMatrix.print('<!DOCTYPE html>' +
+        this.depMatrix.addHeader('<!DOCTYPE html>' +
             '<html>' +
             '<head>' +
             '<style>' +
@@ -440,8 +445,10 @@ steal('./esprima.js', './helpers.js', function () {
             '<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>' +
             '<script>' +
             '');
-        this.depMatrix.print('var depData = ' + JSON.stringify(this.globalDepStat) + ';');
-        this.depMatrix.print('$().ready(function () {' +
+        if (this.options.analyzerOpts.doDependencies) {
+            this.depMatrix.print('var depData = ' + JSON.stringify(this.globalDepStat) + ';');
+        }
+        this.depMatrix.addFooter('$().ready(function () {' +
             'var getAllClassNames = function() {' +
             'var tmp = {}, ret = [];' +
             'for (var i in depData) {' +
@@ -500,10 +507,10 @@ steal('./esprima.js', './helpers.js', function () {
             '</html>');
         this.depMatrix.close();
 
-        this.depFile.print('}');
+        this.depFile.addFooter('}');
         this.depFile.close();
 
-        this.eventFile.print('}');
+        this.eventFile.addFooter('}');
         this.eventFile.close();
 
 
@@ -514,7 +521,7 @@ steal('./esprima.js', './helpers.js', function () {
         var mcPerCc = (this.globalMethodCount / this.globalClassCount).toFixed(2);
         var mcPerCcState = mcPerCc < 4 ? 'good' : mcPerCc > 10 ? 'bad' : 'ok';
 
-        this.statsFile.print('<!DOCTYPE html>' +
+        this.statsFile.addHeader('<!DOCTYPE html>' +
             '<html>' +
             '<head>' +
             '<style>' +
@@ -529,40 +536,43 @@ steal('./esprima.js', './helpers.js', function () {
             '}' +
             '</style>' +
             '</head>' +
-            '<body>' +
-            '<table>' +
-            '<tr>' +
-            '<td>CYC</td>' +
-            '<td>' + this.globalCycComp + '</td>' +
-            '</tr>' +
-            '<tr>' +
-            '<td>LOC</td>' +
-            '<td>' + this.globalLoc + '</td>' +
-            '</tr>' +
-            '<tr>' +
-            '<td>Methods</td>' +
-            '<td>' + this.globalMethodCount + '</td>' +
-            '</tr>' +
-            '<tr>' +
-            '<td>Classes</td>' +
-            '<td>' + this.globalClassCount + '</td>' +
-            '</tr>' +
-            '<tr>' +
-            '<td>CYC/LOC</td>' +
-            '<td class="' + cycPerLocState + '">' + cycPerLoc + '</td>' +
-            '</tr>' +
-            '<tr>' +
-            '<td>LOC/Methods</td>' +
-            '<td class="' + locPerMcState + '">' + locPerMc + '</td>' +
-            '</tr>' +
-            '<tr>' +
-            '<td>Methods/Classes</td>' +
-            '<td class="' + mcPerCcState + '">' + mcPerCc + '</td>' +
-            '</tr>' +
-            '</table>' +
-            '</body>' +
-            '</html>',
-        {file: this.statsFile});
+            '<body>');
+
+        if (this.options.analyzerOpts.doStatistics) {
+            this.statsFile.print('<table>' +
+                '<tr>' +
+                '<td>CYC</td>' +
+                '<td>' + this.globalCycComp + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>LOC</td>' +
+                '<td>' + this.globalLoc + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Methods</td>' +
+                '<td>' + this.globalMethodCount + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Classes</td>' +
+                '<td>' + this.globalClassCount + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>CYC/LOC</td>' +
+                '<td class="' + cycPerLocState + '">' + cycPerLoc + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>LOC/Methods</td>' +
+                '<td class="' + locPerMcState + '">' + locPerMc + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Methods/Classes</td>' +
+                '<td class="' + mcPerCcState + '">' + mcPerCc + '</td>' +
+                '</tr>' +
+                '</table>');
+        }
+        this.statsFile.addFooter('</body>' +
+            '</html>'
+        );
         this.statsFile.close();
     };
 

@@ -5,6 +5,8 @@ steal('../js/jslint_analyzer.js', function () {
             var mockFile = function (name) {
                 me[name] = [];
                 return {
+                    addHeader: function () {},
+                    addFooter: function () {},
                     read: function () {
                         return '';
                     },
@@ -55,7 +57,7 @@ steal('../js/jslint_analyzer.js', function () {
     test('Extra comma', function () {
         var input = 'var test = {prop: 12, };';
         this.analyzer.parse(input);
-        equal(this.checkStyle[2], '    <error line="1" column="21" severity="error" message="Extra comma.' +
+        equal(this.checkStyle[0], '    <error line="1" column="21" severity="error" message="Extra comma.' +
             '" source="JSlint.Error" evidence="' + input + '"/>\n');
     });
 
@@ -66,7 +68,7 @@ steal('../js/jslint_analyzer.js', function () {
             '    }\n' +
             '};';
         this.analyzer.parse(input);
-        equal(this.checkStyle[2], '    <error line="2" column="0" severity="info" message="Unused variable: x' +
+        equal(this.checkStyle[0], '    <error line="2" column="0" severity="info" message="Unused variable: x' +
             '" source="JSlint.Unused"/>\n');
     });
 });

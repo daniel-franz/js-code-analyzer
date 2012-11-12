@@ -1,25 +1,31 @@
 var exports = {};
-steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer.js', function (steal) {
+steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer.js', function () {
     var analyzers = {
         data: {},
         factory: function (type, options) {
+            var output;
+            if (options.consoleOutput) {
+                output = ioDrivers.openConsole;
+            } else {
+                output = ioDrivers.openFile;
+            }
             if (!analyzers.data.files) {
                 analyzers.data.files = {};
             }
             if (!analyzers.data.files.depGraph) {
-                analyzers.data.files.depGraph = ioDrivers.openFile('dependencies.dot');
+                analyzers.data.files.depGraph = output('dependencies.dot');
             }
             if (!analyzers.data.files.eventGraph) {
-                analyzers.data.files.eventGraph = ioDrivers.openFile('openajax-events.dot');
+                analyzers.data.files.eventGraph = output('openajax-events.dot');
             }
             if (!analyzers.data.files.checkStyle) {
-                analyzers.data.files.checkStyle = ioDrivers.openFile('checkstyle_js.xml');
+                analyzers.data.files.checkStyle = output('checkstyle_js.xml');
             }
             if (!analyzers.data.files.depMatrix) {
-                analyzers.data.files.depMatrix = ioDrivers.openFile('js-dependencies.html');
+                analyzers.data.files.depMatrix = output('js-dependencies.html');
             }
             if (!analyzers.data.files.statistics) {
-                analyzers.data.files.statistics = ioDrivers.openFile('js-statistics.html');
+                analyzers.data.files.statistics = output('js-statistics.html');
             }
             return new analyzers[type](options, analyzers.data.files);
         },
@@ -57,10 +63,7 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
                 inList = true;
             }
         }
-        if (!inList && options.fileWhitelist.length) {
-            return true;
-        }
-        return false;
+        return (!inList && options.fileWhitelist.length);
     };
     steal.analyze = function (url, options) {
         options = extend({
@@ -80,48 +83,58 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
         var folder = steal.URI.cur.dir();
         var myAnalyzers = [];
 
+        function analyzeFile (script, text, i) {
+            var curFilename, ext;
+            if (script.type === 'fn' && script.rootSrc) {
+                var src = script.rootSrc + "",
+                    base = "" + window.location,
+                    url = ('../../' + src).match(/([^\?#]*)/)[1];
+                curFilename = src;
+                ext = curFilename.split('.').pop();
+                url = Envjs.uri(url, base);
+
+                if (url.match(/^file\:/)) {
+                    url = url.replace("file:/", "");
+                    text = readFile("/" + url);
+                }
+
+                if (url.match(/^http\:/)) {
+                    text = readUrl(url);
+                }
+            } else {
+                curFilename = folder.join(script.src).toString();
+                ext = script.ext;
+                text = text.options.text;
+            }
+
+            if (!text || !curFilename || alreadyLoaded[curFilename]) {
+                return;
+            }
+            if (isFilenameIgnored(curFilename, ext, options)) {
+                return;
+            }
+            analyzers.startFile(options.pathPrefix + curFilename);
+            for (var j = 0; j < myAnalyzers.length; j++) {
+                myAnalyzers[j].parse(text, curFilename);
+            }
+            analyzers.stopFile(options.pathPrefix + curFilename);
+            alreadyLoaded[curFilename] = true;
+        }
         for (var i = 0; i < options.analyzers.length; i++) {
             myAnalyzers.push(analyzers.factory(options.analyzers[i], options));
         }
 
-        steal.build.open(url, function (files) {
-            files.each(function (script, text, i) {
-                var curFilename, ext;
-                if (script.type === 'fn' && script.rootSrc) {
-                    var src = script.rootSrc + "",
-                        base = "" + window.location,
-                        url = ('../../' + src).match(/([^\?#]*)/)[1];
-                    curFilename = src;
-                    ext = curFilename.split('.').pop();
-                    url = Envjs.uri(url, base);
-
-                    if (url.match(/^file\:/)) {
-                        url = url.replace("file:/", "");
-                        text = readFile("/" + url);
-                    }
-
-                    if (url.match(/^http\:/)) {
-                        text = readUrl(url);
-                    }
-                } else {
-                    curFilename = folder.join(script.src).toString();
-                    ext = script.ext;
-                    text = text.options.text;
-                }
-                if (!text || !curFilename || alreadyLoaded[curFilename]) {
-                    return;
-                }
-                if (isFilenameIgnored(curFilename, ext, options)) {
-                    return;
-                }
-                analyzers.startFile(options.pathPrefix + curFilename);
-                for (var j = 0; j < myAnalyzers.length; j++) {
-                    myAnalyzers[j].parse(text, curFilename);
-                }
-                analyzers.stopFile(options.pathPrefix + curFilename);
-                alreadyLoaded[curFilename] = true;
+        if (url.splice) {
+            for (i = 0; i < url.length; i++) {
+                steal.build.open('analyzer/html/dummy.html', function () {
+                    analyzeFile({type: 'fn', rootSrc: url[i]});
+                });
+            }
+        } else {
+            steal.build.open(url, function (files) {
+                files.each(analyzeFile);
             });
-        });
+        }
 
         for (var j = 0; j < myAnalyzers.length; j++) {
             myAnalyzers[j].destroy();

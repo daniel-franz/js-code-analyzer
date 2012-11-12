@@ -16,6 +16,8 @@ var extend = function (d, s) {
 var ioDrivers = {
     openConsole: function () {
         return {
+            addHeader: function () {},
+            addFooter: function () {},
             read: function () {
                 var br = new java.io.BufferedReader(new java.io.InputStreamReader(java.lang.System["in"]));
                 try {
@@ -24,25 +26,33 @@ var ioDrivers = {
                 return '';
             },
             print: function (text) {
-                print(text);
+                print(text.replace(/\n$/, ''));
             },
             close: function () {}
         }
     },
     openFile: function (filename) {
-        var handle;
+        var handle, header = '', footer = '';
         return {
+            addHeader: function (text) {
+                header += text;
+            },
+            addFooter: function (text) {
+                footer += text;
+            },
             read: function () {
 
             },
             print: function (text) {
                 if (!handle) {
                     handle = new java.io.BufferedWriter(new java.io.FileWriter(filename, false));
+                    handle.write(header);
                 }
                 handle.write(text);
             },
             close: function () {
                 if (handle) {
+                    handle.write(footer);
                     handle.close();
                 }
             }

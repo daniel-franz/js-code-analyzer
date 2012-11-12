@@ -1,11 +1,12 @@
+var JSLINT;
 steal('steal/clean/jslint.js', './helpers.js', function () {
     var jsLint_analyzer = function (options, files) {
         this.options = options;
         this.checkStyleFile = files.checkStyle;
-        this.checkStyleFile.print('<?xml version="1.0" encoding="UTF-8"?>\n');
-        this.checkStyleFile.print('<checkstyle version="1.3.0">\n');
+        this.checkStyleFile.addHeader('<?xml version="1.0" encoding="UTF-8"?>\n');
+        this.checkStyleFile.addHeader('<checkstyle version="1.3.0">\n');
     };
-    jsLint_analyzer.prototype.parse = function (out, curFilename) {
+    jsLint_analyzer.prototype.parse = function (out) {
         var i;
         JSLINT(out, this.options.jsLintOpts);
         if (JSLINT.errors.length) {
@@ -46,7 +47,7 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
         }
     };
     jsLint_analyzer.prototype.destroy = function () {
-        this.checkStyleFile.print('</checkstyle>\n');
+        this.checkStyleFile.addFooter('</checkstyle>\n');
         this.checkStyleFile.close();
     };
 

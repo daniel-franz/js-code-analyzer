@@ -1,9 +1,13 @@
 #!/bin/sh
 
-./js analyzer/js/analyzer.js
+./js analyzer/js/analyzer.js $*
 
-dot -Tsvg dependencies.dot -o js-dependencies.svg
-dot -Tsvg openajax-events.dot -o openajax-events.svg
+if [ -f dependencies.dot ]; then
+    dot -Tsvg dependencies.dot -o js-dependencies.svg
+    rm dependencies.dot
+fi
 
-rm dependencies.dot
-rm openajax-events.dot
+if [ -f openajax-events.dot ]; then
+    dot -Tsvg openajax-events.dot -o openajax-events.svg
+    rm openajax-events.dot
+fi
