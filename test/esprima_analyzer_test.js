@@ -1,4 +1,3 @@
-var exports = {};
 steal('../js/esprima_analyzer.js', function () {
     module('Esprima analyzer', {
         setup: function () {
@@ -6,6 +5,9 @@ steal('../js/esprima_analyzer.js', function () {
             var mockFile = function (name) {
                 me[name] = [];
                 return {
+                    read: function () {
+                        return '';
+                    },
                     print: function (text) {
                         me[name].push(text);
                     },
