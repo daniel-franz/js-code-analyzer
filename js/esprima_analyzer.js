@@ -1,3 +1,4 @@
+/*global extend: true, exports: true */
 steal('./esprima.js', './helpers.js', function () {
     var walker = {
         nodeTypes: {},
@@ -40,7 +41,7 @@ steal('./esprima.js', './helpers.js', function () {
         (function traverse(ast, curDepth) {
             for (var i in ast) {
                 if (ast[i] && typeof ast[i] === 'object') {
-                    var ret = func(ast[i], curDepth);
+                    func(ast[i], curDepth);
                     traverse(ast[i], curDepth + 1);
                 }
             }
@@ -60,30 +61,25 @@ steal('./esprima.js', './helpers.js', function () {
     },
     analyzeCycComp = function (ast, success) {
         var ret = {};
-        var lastVar, lastProp, lastAss;
+        var last = {};
         var parentStack = [];
         var parentName = null;
         var parentDepth = 0;
         walker.subscribe('*', function (ast, curDepth) {
-            if (parentDepth === curDepth + 1) {
+            if (parentName && parentDepth === curDepth) {
+                parentStack.pop();
                 var tmp = parentStack[parentStack.length - 1];
                 parentName = tmp ? tmp.name : null;
                 parentDepth = tmp ? tmp.depth : 0;
             }
-            if (parentDepth === curDepth) {
-                parentStack.pop();
-            }
         });
-        walker.subscribe('VariableDeclarator', function (ast) {
-            lastVar = ast;
-        });
-        walker.subscribe('Property', function (ast) {
-            lastProp = ast;
-        });
-        walker.subscribe('AssignmentExpression', function (ast) {
-            lastAss = ast;
+        walker.subscribe(['VariableDeclarator', 'Property', 'AssignmentExpression'], function (ast) {
+            last[ast.type] = ast;
         });
         walker.subscribe(['FunctionExpression', 'FunctionDeclaration'], function (ast, curDepth) {
+            var lastVar = last.VariableDeclarator;
+            var lastProp = last.Property;
+            var lastAss = last.AssignmentExpression;
             var parent = ast.id ||
                 lastVar && lastVar.init === ast && lastVar.id ||
                 lastProp && lastProp.value === ast && lastProp.key ||
@@ -179,17 +175,6 @@ steal('./esprima.js', './helpers.js', function () {
             success(ret);
         });
     },
-    analyzeClassName = function (ast, success) {
-        var ret;
-        walker.subscribe('CallExpression', function (ast) {
-            if (!ret && isClassName(ast)) {
-                ret = getClassName(ast);
-            }
-        });
-        walker.callbacks.push(function () {
-            success(ret);
-        });
-    },
     getClassName = function (ast) {
         return '' + ast['arguments'][0].value;
     },
@@ -201,6 +186,17 @@ steal('./esprima.js', './helpers.js', function () {
             return candidate.match(/^[A-Z]/) && candidate.match(/\./);
         }
         return false;
+    },
+    analyzeClassName = function (ast, success) {
+        var ret;
+        walker.subscribe('CallExpression', function (ast) {
+            if (!ret && isClassName(ast)) {
+                ret = getClassName(ast);
+            }
+        });
+        walker.callbacks.push(function () {
+            success(ret);
+        });
     },
     analyzeDepMatrix = function (ast, success) {
         var className, tmp, inherit;
@@ -328,11 +324,6 @@ steal('./esprima.js', './helpers.js', function () {
                                 source: 'esprima.complexity',
                                 evidence: i
                             });
-//                            me.checkStyleFile.print('    <error line="' + cycStat[i].line + '" column="' +
-//                                cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
-//                                cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
-//                                {file: me.checkStyleFile}
-//                            );
                         }
                     }
                 }
@@ -364,11 +355,6 @@ steal('./esprima.js', './helpers.js', function () {
                         message: 'Short variable name: ' + shortVarStat[i].name,
                         source: 'esprima.shortVar'
                     });
-//                    me.checkStyleFile.print('    <error line="' + shortVarStat[i].line + '" column="' +
-//                        shortVarStat[i].column + '" severity="info" message="Short variable name: ' +
-//                        shortVarStat[i].name + '" source="esprima.shortVar" />\n',
-//                        {file: me.checkStyleFile}
-//                    );
                 }
             }
         });
@@ -498,7 +484,8 @@ steal('./esprima.js', './helpers.js', function () {
             'line += \'</tr>\';' +
             '$(\'table.matrix\').append(line);' +
             'for (i = 0; i < classNames.length; i++) {' +
-            'line = \'<tr><td class="name">\' + classNames[i].name + \'</td><td class="index" data-idx="\' + i + \'">\' + (i + 1) + \'</td>\';' +
+            'line = \'<tr><td class="name">\' + classNames[i].name + \'</td><td class="index" data-idx="\' + i + \'">' +
+                '\' + (i + 1) + \'</td>\';' +
             'for (j = 0; j < classNames.length; j++) {' +
             'var cssClass = i === j ? \'diag\' : \'\';' +
             'if (depData[classNames[i].name] && depData[classNames[i].name].depends[classNames[j].name]) {' +

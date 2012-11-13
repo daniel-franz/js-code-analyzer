@@ -7,11 +7,11 @@ var escapeHTML = function (content) {
         .replace(/"/g, '&#34;')
         .replace(/'/g, "&#39;");
 };
-var extend = function (d, s) {
-    for (var p in s) {
-        d[p] = s[p];
+var extend = function (dst, src) {
+    for (var prop in src) {
+        dst[prop] = src[prop];
     }
-    return d;
+    return dst;
 };
 var ioDrivers = {
     openConsole: function () {
@@ -19,9 +19,9 @@ var ioDrivers = {
             addHeader: function () {},
             addFooter: function () {},
             read: function () {
-                var br = new java.io.BufferedReader(new java.io.InputStreamReader(java.lang.System["in"]));
+                var reader = new java.io.BufferedReader(new java.io.InputStreamReader(java.lang.System["in"]));
                 try {
-                    return br.readLine();
+                    return reader.readLine();
                 } catch (e) {}
                 return '';
             },
@@ -29,7 +29,7 @@ var ioDrivers = {
                 print(text.replace(/\n$/, ''));
             },
             close: function () {}
-        }
+        };
     },
     openFile: function (filename) {
         var handle, header = '', footer = '';
@@ -63,7 +63,7 @@ var reporters = {
     xmlCheckstyle: function (file) {
         file.addHeader('<?xml version="1.0" encoding="UTF-8"?>\n');
         file.addHeader('<checkstyle version="1.3.0">\n');
-        file.addFooter('</file>\n');
+        file.addFooter('  </file>\n');
         file.addFooter('</checkstyle>\n');
         var newFile = true;
         return {
@@ -78,13 +78,13 @@ var reporters = {
                 };
                 extend(data, obj);
                 file.print('    <error line="' + data.line + '" column="' + data.column + '" ' +
-                    'severity="' + data.severity + '" message="'+ escapeHTML(data.message) + '" ' +
+                    'severity="' + data.severity + '" message="' + escapeHTML(data.message) + '" ' +
                     'source="' + data.source + '" evidence="' + escapeHTML(data.evidence) + '"/>\n'
                 );
             },
             newFile: function (filename) {
                 if (!newFile) {
-                    file.print('</file>\n');
+                    file.print('  </file>\n');
                 }
                 newFile = false;
                 file.print('  <file name="' + escapeHTML(filename) + '">\n');
@@ -92,6 +92,27 @@ var reporters = {
             close: function () {
                 file.close();
             }
-        }
+        };
+    },
+    plainCheckstyle: function (file) {
+        var curFile;
+        return {
+            error: function (obj) {
+                var data = {
+                    line: 0,
+                    column: 0,
+                    severity: '',
+                    message: '',
+                    source: '',
+                    evidence: ''
+                };
+                extend(data, obj);
+                file.print(curFile + '(' + data.line + ',' + data.column + '): ' + data.message);
+            },
+            newFile: function (filename) {
+                curFile = filename;
+            },
+            close: function () {}
+        };
     }
 };

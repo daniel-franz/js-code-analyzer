@@ -42,7 +42,7 @@ steal('../js/jslint_analyzer.js', function () {
                 }
             }, {
                 depGraph: mockFile('depGraph'),
-                checkStyle: mockFile('checkStyle'),
+                checkStyleReporter: reporters.xmlCheckstyle(mockFile('checkStyle')),
                 depMatrix: mockFile('depMatrix'),
                 eventGraph: mockFile('eventGraph'),
                 statistics: mockFile('statistics')
@@ -69,6 +69,6 @@ steal('../js/jslint_analyzer.js', function () {
             '};';
         this.analyzer.parse(input);
         equal(this.checkStyle[0], '    <error line="2" column="0" severity="info" message="Unused variable: x' +
-            '" source="JSlint.Unused"/>\n');
+            '" source="JSlint.Unused" evidence=""/>\n');
     });
 });

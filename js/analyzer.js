@@ -58,11 +58,17 @@ steal('analyzer/js/analyze.js', 'analyzer/js/helpers.js').then(function () {
         }
     }
 
+    if (urls.length) {
+        options.fileWhitelist.push.apply(options.fileWhitelist, urls);
+    } else {
+        urls = projectBuildFile;
+        console.log('No URLs/Files given, analyzing whole project');
+    }
+
     options.consoleOutput = commandLineOpts['-i'] || commandLineOpts['-c'];
 
-    if (urls.length) {
+    if (options.consoleOutput) {
         var ret;
-        options.fileWhitelist.push.apply(options.fileWhitelist, urls);
         options.analyzerOpts.doStatistics = false;
         options.analyzerOpts.doDependencies = false;
         options.analyzerOpts.doOpenAjaxEvents = false;
@@ -78,6 +84,6 @@ steal('analyzer/js/analyze.js', 'analyzer/js/helpers.js').then(function () {
             ret !== false
         );
     } else {
-        steal.analyze(projectBuildFile, options);
+        steal.analyze(urls, options);
     }
 });

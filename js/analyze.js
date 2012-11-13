@@ -1,13 +1,17 @@
+/*global ioDrivers: true, reporters: true, extend: true, Envjs: true, readFile: true, readUrl: true */
+
 var exports = {};
 steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer.js', function () {
     var analyzers = {
         data: {},
         factory: function (type, options) {
-            var output;
+            var output, checkstyleReporter;
             if (options.consoleOutput) {
                 output = ioDrivers.openConsole;
+                checkstyleReporter = reporters.plainCheckstyle;
             } else {
                 output = ioDrivers.openFile;
+                checkstyleReporter = reporters.xmlCheckstyle;
             }
             if (!analyzers.data.files) {
                 analyzers.data.files = {};
@@ -18,11 +22,8 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             if (!analyzers.data.files.eventGraph) {
                 analyzers.data.files.eventGraph = output('openajax-events.dot');
             }
-//            if (!analyzers.data.files.checkStyle) {
-//                analyzers.data.files.checkStyle = output('checkstyle_js.xml');
-//            }
             if (!analyzers.data.files.checkStyleReporter) {
-                analyzers.data.files.checkStyleReporter = reporters.xmlCheckstyle(output('checkstyle_js.xml'));
+                analyzers.data.files.checkStyleReporter = checkstyleReporter(output('checkstyle_js.xml'));
             }
             if (!analyzers.data.files.depMatrix) {
                 analyzers.data.files.depMatrix = output('js-dependencies.html');
@@ -32,12 +33,6 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             }
             return new analyzers[type](options, analyzers.data.files);
         },
-//        startFile: function (filename) {
-//            analyzers.data.files.checkStyle.print('  <file name="' + escapeHTML(filename) + '">\n');
-//        },
-//        stopFile: function (filename) {
-//            analyzers.data.files.checkStyle.print('  </file>\n');
-//        },
         jsLint: exports.jsLint_analyzer,
         esprima: exports.esprima_analyzer
     };
@@ -86,7 +81,7 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
         var folder = steal.URI.cur.dir();
         var myAnalyzers = [];
 
-        function analyzeFile (script, text, i) {
+        function analyzeFile(script, text, i) {
             var curFilename, ext;
             if (script.type === 'fn' && script.rootSrc) {
                 var src = script.rootSrc + "",
@@ -116,7 +111,7 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             if (isFilenameIgnored(curFilename, ext, options)) {
                 return;
             }
-            analyzers.data.checkStyleReporter.newFile(options.pathPrefix + curFilename);
+            analyzers.data.files.checkStyleReporter.newFile(options.pathPrefix + curFilename);
             for (var j = 0; j < myAnalyzers.length; j++) {
                 myAnalyzers[j].parse(text, curFilename);
             }
@@ -127,11 +122,11 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
         }
 
         if (url.splice) {
-            for (i = 0; i < url.length; i++) {
-                steal.build.open('analyzer/html/dummy.html', function () {
+            steal.build.open('analyzer/html/dummy.html', function () {
+                for (i = 0; i < url.length; i++) {
                     analyzeFile({type: 'fn', rootSrc: url[i]});
-                });
-            }
+                }
+            });
         } else {
             steal.build.open(url, function (files) {
                 files.each(analyzeFile);
@@ -141,5 +136,6 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
         for (var j = 0; j < myAnalyzers.length; j++) {
             myAnalyzers[j].destroy();
         }
+        analyzers.data.files.checkStyleReporter.close();
     };
 });

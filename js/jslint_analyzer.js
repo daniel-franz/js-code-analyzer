@@ -1,15 +1,16 @@
+/*global extend: true, exports: true */
+
 var JSLINT;
 steal('steal/clean/jslint.js', './helpers.js', function () {
     var jsLint_analyzer = function (options, files) {
         this.options = options;
         this.reporter = files.checkStyleReporter;
-//        this.checkStyleFile = files.checkStyle;
-//        this.checkStyleFile.addHeader('<?xml version="1.0" encoding="UTF-8"?>\n');
-//        this.checkStyleFile.addHeader('<checkstyle version="1.3.0">\n');
     };
     jsLint_analyzer.prototype.parse = function (out) {
         var i;
-        JSLINT(out, this.options.jsLintOpts);
+        var opts = {};
+        extend(opts, this.options.jsLintOpts);
+        JSLINT(out, opts);
         if (JSLINT.errors.length) {
             for (i = 0; i < JSLINT.errors.length; i++) {
                 var error = JSLINT.errors[i];
@@ -36,10 +37,6 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
                     source: 'JSlint.Error',
                     evidence: evidence
                 });
-//                this.checkStyleFile.print('    <error line="' + error.line + '" column="' +
-//                    error.character + '" severity="' + severity + '" message="' + escapeHTML(error.reason) +
-//                    '" source="JSlint.Error" evidence="' + evidence + '"/>\n'
-//                );
             }
         }
 
@@ -53,16 +50,10 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
                     message: 'Unused variable: ' + data.unused[i].name,
                     source: 'JSlint.Unused'
                 });
-//                this.checkStyleFile.print('    <error line="' + data.unused[i].line + '" column="0" ' +
-//                    'severity="info" message="Unused variable: ' +
-//                    escapeHTML(data.unused[i].name) + '" source="JSlint.Unused"/>\n'
-//                );
             }
         }
     };
     jsLint_analyzer.prototype.destroy = function () {
-//        this.checkStyleFile.addFooter('</checkstyle>\n');
-//        this.checkStyleFile.close();
     };
 
     exports.jsLint_analyzer = jsLint_analyzer;

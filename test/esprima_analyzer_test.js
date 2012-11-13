@@ -16,7 +16,6 @@ steal('../js/esprima_analyzer.js', function () {
                     close: function () {}
                 };
             };
-
             this.analyzer = new exports.esprima_analyzer({
                 analyzerOpts: {
                     doStatistics: true,
@@ -27,7 +26,7 @@ steal('../js/esprima_analyzer.js', function () {
                 }
             }, {
                 depGraph: mockFile('depGraph'),
-                checkStyle: mockFile('checkStyle'),
+                checkStyleReporter: reporters.xmlCheckstyle(mockFile('checkStyle')),
                 depMatrix: mockFile('depMatrix'),
                 eventGraph: mockFile('eventGraph'),
                 statistics: mockFile('statistics')
@@ -40,25 +39,41 @@ steal('../js/esprima_analyzer.js', function () {
     });
 
     test('Cyclomatic complexity', function () {
-        this.analyzer.parse('function test () {var i = 42;}');
+        this.analyzer.parse('function test() {var i = 42;}');
         equal(this.checkStyle[0], '    <error line="1" column="9" severity="warning" ' +
             'message="Excessive cyclomatic complexity: 1" source="esprima.complexity" evidence="test"/>\n');
 
-        this.analyzer.parse('function test () {if (x === 5) {var i = 42;} else {var j = 42;}}');
+        this.analyzer.parse('function test() {if (x === 5) {var i = 42;} else {var j = 42;}}');
         equal(this.checkStyle[1], '    <error line="1" column="9" severity="warning" ' +
             'message="Excessive cyclomatic complexity: 3" source="esprima.complexity" evidence="test"/>\n');
 
-        this.analyzer.parse('function test () {var i = (x === 5 ? 42 : 23);}');
+        this.analyzer.parse('function test() {var i = (x === 5 ? 42 : 23);}');
         equal(this.checkStyle[2], '    <error line="1" column="9" severity="warning" ' +
             'message="Excessive cyclomatic complexity: 2" source="esprima.complexity" evidence="test"/>\n');
 
-        this.analyzer.parse('function test () {switch (x) {' +
+        this.analyzer.parse('function test() {switch (x) {' +
             'case 1: var j = 2; break; case 2: var j = 3; break; default: j = 1000; break;' +
             '}}');
         equal(this.checkStyle[3], '    <error line="1" column="9" severity="warning" ' +
             'message="Excessive cyclomatic complexity: 4" source="esprima.complexity" evidence="test"/>\n');
 
-        equal(this.analyzer.globalCycComp, 10);
+        this.analyzer.parse(
+            'function test() { function test2() {var i = foo ? 42 : 23;} if (foo) {var i = 2;} else {var i = 3;}}'
+        );
+        equal(this.checkStyle[4], '    <error line="1" column="9" severity="warning" ' +
+            'message="Excessive cyclomatic complexity: 3" source="esprima.complexity" evidence="test"/>\n');
+        equal(this.checkStyle[5], '    <error line="1" column="27" severity="warning" ' +
+            'message="Excessive cyclomatic complexity: 2" source="esprima.complexity" evidence="test2"/>\n');
+
+        this.analyzer.parse(
+            'function test() { if (foo) {var i = 2;} else {var i = 3;} function test2() {var i = foo ? 42 : 23;}}'
+        );
+        equal(this.checkStyle[6], '    <error line="1" column="9" severity="warning" ' +
+            'message="Excessive cyclomatic complexity: 3" source="esprima.complexity" evidence="test"/>\n');
+        equal(this.checkStyle[7], '    <error line="1" column="67" severity="warning" ' +
+            'message="Excessive cyclomatic complexity: 2" source="esprima.complexity" evidence="test2"/>\n');
+
+        equal(this.analyzer.globalCycComp, 20);
     });
 
     test('Code size metrics', function () {
@@ -102,14 +117,14 @@ steal('../js/esprima_analyzer.js', function () {
         this.analyzer.parse('var i = 0; var p = 2; var x = \'3\';');
 
         equal(this.checkStyle[0], '    <error line="1" column="15" severity="info" message="Short variable name: p" ' +
-            'source="esprima.shortVar" />\n');
+            'source="esprima.shortVar" evidence=""/>\n');
         equal(this.checkStyle[1], '    <error line="1" column="26" severity="info" message="Short variable name: x" ' +
-            'source="esprima.shortVar" />\n');
+            'source="esprima.shortVar" evidence=""/>\n');
 
         this.analyzer.options.analyzerOpts.shortVarWhitelist = ['x'];
         this.analyzer.parse('var i = 0; var p = 2; var x = \'3\';');
         equal(this.checkStyle[2], '    <error line="1" column="15" severity="info" message="Short variable name: p" ' +
-            'source="esprima.shortVar" />\n');
+            'source="esprima.shortVar" evidence=""/>\n');
         equal(this.checkStyle[3], undefined);
 
     });
