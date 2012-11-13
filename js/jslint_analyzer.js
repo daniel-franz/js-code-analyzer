@@ -2,9 +2,10 @@ var JSLINT;
 steal('steal/clean/jslint.js', './helpers.js', function () {
     var jsLint_analyzer = function (options, files) {
         this.options = options;
-        this.checkStyleFile = files.checkStyle;
-        this.checkStyleFile.addHeader('<?xml version="1.0" encoding="UTF-8"?>\n');
-        this.checkStyleFile.addHeader('<checkstyle version="1.3.0">\n');
+        this.reporter = files.checkStyleReporter;
+//        this.checkStyleFile = files.checkStyle;
+//        this.checkStyleFile.addHeader('<?xml version="1.0" encoding="UTF-8"?>\n');
+//        this.checkStyleFile.addHeader('<checkstyle version="1.3.0">\n');
     };
     jsLint_analyzer.prototype.parse = function (out) {
         var i;
@@ -18,20 +19,27 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
                 }
                 var line = error.evidence.replace(/\t/g, "     ");
 
-                var evidence = escapeHTML(
-                    line.substring(
+                var evidence = line.substring(
                         Math.max(error.character - 25, 0),
                         Math.min(error.character + 25, line.length)
-                    ).replace(/^\s+/, ""));
+                    ).replace(/^\s+/, "");
 
                 if (error.reason == 'Extra comma.') {
                     severity = 'error';
                 }
 
-                this.checkStyleFile.print('    <error line="' + error.line + '" column="' +
-                    error.character + '" severity="' + severity + '" message="' + escapeHTML(error.reason) +
-                    '" source="JSlint.Error" evidence="' + evidence + '"/>\n'
-                );
+                this.reporter.error({
+                    line: error.line,
+                    column: error.character,
+                    severity: severity,
+                    message: error.reason,
+                    source: 'JSlint.Error',
+                    evidence: evidence
+                });
+//                this.checkStyleFile.print('    <error line="' + error.line + '" column="' +
+//                    error.character + '" severity="' + severity + '" message="' + escapeHTML(error.reason) +
+//                    '" source="JSlint.Error" evidence="' + evidence + '"/>\n'
+//                );
             }
         }
 
@@ -39,16 +47,22 @@ steal('steal/clean/jslint.js', './helpers.js', function () {
 
         if (data.unused) {
             for (i = 0; i < data.unused.length; i++) {
-                this.checkStyleFile.print('    <error line="' + data.unused[i].line + '" column="0" ' +
-                    'severity="info" message="Unused variable: ' +
-                    escapeHTML(data.unused[i].name) + '" source="JSlint.Unused"/>\n'
-                );
+                this.reporter.error({
+                    line: data.unused[i].line,
+                    severity: 'info',
+                    message: 'Unused variable: ' + data.unused[i].name,
+                    source: 'JSlint.Unused'
+                });
+//                this.checkStyleFile.print('    <error line="' + data.unused[i].line + '" column="0" ' +
+//                    'severity="info" message="Unused variable: ' +
+//                    escapeHTML(data.unused[i].name) + '" source="JSlint.Unused"/>\n'
+//                );
             }
         }
     };
     jsLint_analyzer.prototype.destroy = function () {
-        this.checkStyleFile.addFooter('</checkstyle>\n');
-        this.checkStyleFile.close();
+//        this.checkStyleFile.addFooter('</checkstyle>\n');
+//        this.checkStyleFile.close();
     };
 
     exports.jsLint_analyzer = jsLint_analyzer;

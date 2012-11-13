@@ -299,7 +299,7 @@ steal('./esprima.js', './helpers.js', function () {
 
         this.options = options;
         this.depFile = files.depGraph;
-        this.checkStyleFile = files.checkStyle;
+        this.checkStyleReporter = files.checkStyleReporter;
         this.depMatrix = files.depMatrix;
         this.eventFile = files.eventGraph;
         this.statsFile = files.statistics;
@@ -320,11 +320,19 @@ steal('./esprima.js', './helpers.js', function () {
                     if (cycStat[i]) {
                         me.globalCycComp += cycStat[i].complexity;
                         if (cycStat[i].complexity > me.options.analyzerOpts.cycCompThreshold) {
-                            me.checkStyleFile.print('    <error line="' + cycStat[i].line + '" column="' +
-                                cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
-                                cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
-                                {file: me.checkStyleFile}
-                            );
+                            me.checkStyleReporter.error({
+                                line: cycStat[i].line,
+                                column: cycStat[i].column,
+                                severity: 'warning',
+                                message: 'Excessive cyclomatic complexity: ' + cycStat[i].complexity,
+                                source: 'esprima.complexity',
+                                evidence: i
+                            });
+//                            me.checkStyleFile.print('    <error line="' + cycStat[i].line + '" column="' +
+//                                cycStat[i].column + '" severity="warning" message="Excessive cyclomatic complexity: ' +
+//                                cycStat[i].complexity + '" source="esprima.complexity" evidence="' + i + '"/>\n',
+//                                {file: me.checkStyleFile}
+//                            );
                         }
                     }
                 }
@@ -349,11 +357,18 @@ steal('./esprima.js', './helpers.js', function () {
             var i;
             for (i = 0; i < shortVarStat.length; i++) {
                 if (shortVarStat[i]) {
-                    me.checkStyleFile.print('    <error line="' + shortVarStat[i].line + '" column="' +
-                        shortVarStat[i].column + '" severity="info" message="Short variable name: ' +
-                        shortVarStat[i].name + '" source="esprima.shortVar" />\n',
-                        {file: me.checkStyleFile}
-                    );
+                    me.checkStyleReporter.error({
+                        line: shortVarStat[i].line,
+                        column: shortVarStat[i].column,
+                        severity: 'info',
+                        message: 'Short variable name: ' + shortVarStat[i].name,
+                        source: 'esprima.shortVar'
+                    });
+//                    me.checkStyleFile.print('    <error line="' + shortVarStat[i].line + '" column="' +
+//                        shortVarStat[i].column + '" severity="info" message="Short variable name: ' +
+//                        shortVarStat[i].name + '" source="esprima.shortVar" />\n',
+//                        {file: me.checkStyleFile}
+//                    );
                 }
             }
         });

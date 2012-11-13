@@ -18,8 +18,11 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             if (!analyzers.data.files.eventGraph) {
                 analyzers.data.files.eventGraph = output('openajax-events.dot');
             }
-            if (!analyzers.data.files.checkStyle) {
-                analyzers.data.files.checkStyle = output('checkstyle_js.xml');
+//            if (!analyzers.data.files.checkStyle) {
+//                analyzers.data.files.checkStyle = output('checkstyle_js.xml');
+//            }
+            if (!analyzers.data.files.checkStyleReporter) {
+                analyzers.data.files.checkStyleReporter = reporters.xmlCheckstyle(output('checkstyle_js.xml'));
             }
             if (!analyzers.data.files.depMatrix) {
                 analyzers.data.files.depMatrix = output('js-dependencies.html');
@@ -29,12 +32,12 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             }
             return new analyzers[type](options, analyzers.data.files);
         },
-        startFile: function (filename) {
-            analyzers.data.files.checkStyle.print('  <file name="' + escapeHTML(filename) + '">\n');
-        },
-        stopFile: function (filename) {
-            analyzers.data.files.checkStyle.print('  </file>\n');
-        },
+//        startFile: function (filename) {
+//            analyzers.data.files.checkStyle.print('  <file name="' + escapeHTML(filename) + '">\n');
+//        },
+//        stopFile: function (filename) {
+//            analyzers.data.files.checkStyle.print('  </file>\n');
+//        },
         jsLint: exports.jsLint_analyzer,
         esprima: exports.esprima_analyzer
     };
@@ -113,11 +116,10 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             if (isFilenameIgnored(curFilename, ext, options)) {
                 return;
             }
-            analyzers.startFile(options.pathPrefix + curFilename);
+            analyzers.data.checkStyleReporter.newFile(options.pathPrefix + curFilename);
             for (var j = 0; j < myAnalyzers.length; j++) {
                 myAnalyzers[j].parse(text, curFilename);
             }
-            analyzers.stopFile(options.pathPrefix + curFilename);
             alreadyLoaded[curFilename] = true;
         }
         for (var i = 0; i < options.analyzers.length; i++) {
