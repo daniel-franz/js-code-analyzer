@@ -116,3 +116,29 @@ var reporters = {
         };
     }
 };
+
+var handleCommandLineArgs = function (args) {
+    var myConsole = ioDrivers.openConsole();
+    var commandLineOpts = {};
+    var urls = [];
+    if (args[0]) {
+        if (args[0] === '--help' || args[0] === '-h') {
+            myConsole.print('analyzer/bin/analyze <options> <files>');
+            myConsole.print('   -c           console output');
+            myConsole.print('   -i      interactive console');
+            myConsole.print('   -h                this help');
+            return;
+        }
+        for (var i = 0; i < args.length; i++) {
+            if (args[i].indexOf('-') === 0) {
+                commandLineOpts[args[i]] = true;
+                continue;
+            }
+            urls.push(args[i]);
+        }
+    }
+    return {
+        urls: urls,
+        commandLineOpts: commandLineOpts
+    };
+};

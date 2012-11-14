@@ -26,10 +26,12 @@ This currently only works with Javascript MVC/DoneJS.
   - **js-statistics.html**: file containing global code size-metrics
 
 ## Command line usage
-- -h for Help
-- -i for interactive mode (re-check on key)
+analyzer/bin/analyze <options> <files>
+
+###### Options
+- -h for help
+- -i for interactive mode (re-check on key-press)
 - -c for command-line output
-Pass any set of files to be checked.
 
 ## Credits
 - [lastzero](https://github.com/lastzero)'s [liquid jslint](https://github.com/lastzero/jsmvc-extras/tree/master/liquid/jslint) is the piece of software this is derived from.
