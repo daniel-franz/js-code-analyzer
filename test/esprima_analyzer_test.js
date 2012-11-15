@@ -195,6 +195,20 @@ steal('../js/esprima_analyzer.js', function () {
 
         equal(this.depGraph[6], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
         equal(this.depGraph[7], undefined);
+
+        this.analyzer.parse(
+            'Test.ClassName(\'Test.SecondDerivedClassName\', {\n' +
+                'testMethod2: function () {\n' +
+                    'TestMethod.test(i, TestMethod2.Test.test)\n' +
+                '}\n' +
+            '}, {\n' +
+            '});'
+        );
+
+        equal(this.depGraph[7], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
+        equal(this.depGraph[8], '    \"Test.SecondDerivedClassName\" -> \"TestMethod\" [color=red];\n');
+        equal(this.depGraph[9], '    \"Test.SecondDerivedClassName\" -> \"TestMethod2.Test\" [];\n');
+        equal(this.depGraph[10], undefined);
     });
 
     test('OpenAjax events', function () {
