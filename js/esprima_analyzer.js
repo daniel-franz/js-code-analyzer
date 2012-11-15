@@ -49,12 +49,16 @@ steal('./esprima.js', './helpers.js', function () {
     },
     parseMemberExpression = function (ast, everything) {
         var ret = [];
+        var cont = true;
         traverse(ast, function (ast) {
-            if (ast.type === 'Identifier' && (everything || ast.name.match(/^[A-Z]/) || ast.name === '$' ||
-                ast.name === 'jQuery' || ast.name === 'can' ||
-                (ret[0] === 'can' && (ast.name === 'construct' || ast.name === 'control')))
-            ) {
-                ret.push(ast.name);
+            if (cont && ast.type === 'Identifier') {
+                if (everything || ast.name.match(/^[A-Z]/) || ast.name === '$' || ast.name === 'jQuery' ||
+                    ast.name === 'can' || (ret[0] === 'can' && (ast.name === 'construct' || ast.name === 'control'))
+                ) {
+                    ret.push(ast.name);
+                } else {
+                    cont = false;
+                }
             }
         });
         return ret.join('.');
