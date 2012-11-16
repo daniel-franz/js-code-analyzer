@@ -345,8 +345,10 @@ var reporters = {
                 close: function () {
                     var statsAdded = false;
                     for (var i in stats) {
-                        statsAdded = true;
-                        break;
+                        if (stats[i]) {
+                            statsAdded = true;
+                            break;
+                        }
                     }
                     if (statsAdded) {
                         var cycPerLoc = (stats.cycComp / stats.loc).toFixed(2);
