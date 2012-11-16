@@ -136,6 +136,8 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
         for (var j = 0; j < myAnalyzers.length; j++) {
             myAnalyzers[j].destroy();
         }
-        analyzers.data.files.checkStyleReporter.close();
+        for (j in analyzers.data.files) {
+            analyzers.data.files[j].close();
+        }
     };
 });
