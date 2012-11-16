@@ -16,7 +16,7 @@ This currently only works with Javascript MVC/DoneJS.
 ## Installation
 1. Requirements: Graphviz, JavascriptMVC/DoneJS-project
 2. Copy the whole directory into an *analyzer*-directory directly below your JS-root-directory.
-3. Configure *js/analyzer.js* to fit your needs and directory structure.
+3. Configure *js/config.js* to fit your needs and directory structure.
 4. Call *bin/analyze* from your continuous integration server.
 5. Analyze output:
   - **checkstyle_js.xml**: Checkstyle-compatible
