@@ -225,9 +225,9 @@ steal('./esprima.js', './helpers.js', function () {
                         ret[className].depends[tmp].stat = true;
                     }
                 }
-                for (var i = 0; i < ast.arguments.length; i++) {
-                    if (ast.arguments[i].type === 'MemberExpression') {
-                        tmp = parseMemberExpression({ast: ast.arguments[i]});
+                for (var i = 0; i < ast['arguments'].length; i++) {
+                    if (ast['arguments'][i].type === 'MemberExpression') {
+                        tmp = parseMemberExpression({ast: ast['arguments'][i]});
                         if (tmp && tmp !== '$') {
                             ret[className].depends[tmp] = ret[className].depends[tmp] || {};
                             ret[className].depends[tmp].other = true;
@@ -300,62 +300,55 @@ steal('./esprima.js', './helpers.js', function () {
         });
     };
     var esprima_analyzer = function (options, files) {
-        this.globalDepStat = {};
-        this.globalLoc = 0;
-        this.globalCycComp = 0;
-        this.globalMethodCount = 0;
-        this.globalClassCount = 0;
-
         this.options = options;
-        this.depFile = files.depGraph;
+        this.dependencyReporter = files.dependencyReporter;
         this.checkStyleReporter = files.checkStyleReporter;
-        this.depMatrix = files.depMatrix;
-        this.eventFile = files.eventGraph;
-        this.statsFile = files.statistics;
-        this.depFile.addHeader('digraph Dependencies {\n');
-        this.depFile.addHeader('    rankdir=LR\n');
-        this.eventFile.addHeader('digraph Dependencies {\n');
-        this.eventFile.addHeader('    rankdir=LR\n');
+        this.eventReporter = files.eventReporter;
+        this.statisticsReporter = files.statisticsReporter;
     };
 
     esprima_analyzer.prototype.parse = function (out) {
         var me = this;
         var ast = exports.parse(out, {loc: true, comment: true});
 
-        if (this.options.analyzerOpts.doCyclomaticComplexity) {
-            analyzeCycComp(ast, function (cycStat) {
-                var i;
-                for (i in cycStat) {
-                    if (cycStat[i]) {
-                        me.globalCycComp += cycStat[i].complexity;
-                        if (cycStat[i].complexity > me.options.analyzerOpts.cycCompThreshold) {
-                            me.checkStyleReporter.error({
-                                line: cycStat[i].line,
-                                column: cycStat[i].column,
-                                severity: 'warning',
-                                message: 'Excessive cyclomatic complexity: ' + cycStat[i].complexity,
-                                source: 'esprima.complexity',
-                                evidence: i
-                            });
-                        }
+        analyzeCycComp(ast, function (cycStat) {
+            var i;
+            for (i in cycStat) {
+                if (cycStat[i]) {
+                    if (me.options.analyzerOpts.doStatistics) {
+                        me.statisticsReporter.addCycloComplexity(cycStat[i].complexity);
                     }
+                    if (me.options.analyzerOpts.doCyclomaticComplexity &&
+                        cycStat[i].complexity > me.options.analyzerOpts.cycCompThreshold
+                    ) {
+                        me.checkStyleReporter.error({
+                            line: cycStat[i].line,
+                            column: cycStat[i].column,
+                            severity: 'warning',
+                            message: 'Excessive cyclomatic complexity: ' + cycStat[i].complexity,
+                            source: 'esprima.complexity',
+                            evidence: i
+                        });
+                    }
+                }
+            }
+        });
+
+        if (me.options.analyzerOpts.doStatistics) {
+            analyzeLoc(ast, function (locStat) {
+                me.statisticsReporter.addLinesOfCode(locStat.loc);
+            });
+
+            countMethods(ast, function (count) {
+                me.statisticsReporter.addMethodCount(count);
+            });
+
+            analyzeClassName(ast, function (name) {
+                if (name) {
+                    me.statisticsReporter.addClassCount(1);
                 }
             });
         }
-
-        analyzeLoc(ast, function (locStat) {
-            me.globalLoc += locStat.loc;
-        });
-
-        countMethods(ast, function (count) {
-            me.globalMethodCount += count;
-        });
-
-        analyzeClassName(ast, function (name) {
-            if (name) {
-                me.globalClassCount++;
-            }
-        });
 
         analyzeShortVarNames(ast, this.options.analyzerOpts.shortVarWhitelist, function (shortVarStat) {
             var i;
@@ -372,26 +365,13 @@ steal('./esprima.js', './helpers.js', function () {
             }
         });
 
-        if (this.options.analyzerOpts.doOpenAjaxEvents) {
+        if (this.options.analyzerOpts.doDependencies) {
             analyzeDepMatrix(ast, function (depStat) {
                 var i, j;
-                extend(me.globalDepStat, depStat);
 
                 for (i in depStat) {
                     for (j in depStat[i].depends) {
-                        var style = [];
-                        if (depStat[i].depends[j].inherit) {
-                            style.push('style=bold');
-                        }
-                        if (depStat[i].depends[j].instanciate) {
-                            style.push('arrowhead=odot');
-                        }
-                        if (depStat[i].depends[j].stat) {
-                            style.push('color=red');
-                        }
-                        me.depFile.print(
-                            '    "' + i + '" -> "' + j + '" [' + style.join(',') + '];\n'
-                        );
+                        me.dependencyReporter.dependency(i, j, depStat[i].depends[j]);
                     }
                 }
             });
@@ -399,20 +379,14 @@ steal('./esprima.js', './helpers.js', function () {
         if (this.options.analyzerOpts.doOpenAjaxEvents) {
             analyzeOpenAjaxEvents(ast, function (eventStat) {
                 var i, j;
-                var eventList = {};
 
                 for (i in eventStat) {
                     for (j in eventStat[i].emits) {
-                        me.eventFile.print('    "' + i + '" -> "' + j + '";\n');
-                        eventList[j] = true;
+                        me.eventReporter.emit(j, i);
                     }
                     for (j in eventStat[i].receives) {
-                        me.eventFile.print('    "' + j + '" -> "' + i + '";\n');
-                        eventList[j] = true;
+                        me.eventReporter.receives(j, i);
                     }
-                }
-                for (i in eventList) {
-                    me.eventFile.print('    "' + i + '" [shape=box];\n');
                 }
             });
         }
@@ -424,171 +398,6 @@ steal('./esprima.js', './helpers.js', function () {
         walker.clear();
     };
     esprima_analyzer.prototype.destroy = function () {
-        this.depMatrix.addHeader('<!DOCTYPE html>' +
-            '<html>' +
-            '<head>' +
-            '<style>' +
-            '.matrix {' +
-            '    border-spacing: 0;' +
-            '}' +
-            '.matrix td {' +
-            '    border: 1px solid black;' +
-            '}' +
-            '.matrix td.used {' +
-            '    background-color: #800;' +
-            '    color: #ff8;' +
-            '}' +
-            '.diag {' +
-            '    background-color: grey;' +
-            '}' +
-            '.name {' +
-            '    background-color: #ddd;' +
-            '}' +
-            '.index {' +
-            '    background-color: orange;' +
-            '}' +
-            '.index div {' +
-            'margin: 2px;' +
-            '    -webkit-transform: rotate(-90deg);	' +
-            '    -moz-transform: rotate(-90deg);' +
-            '    -ms-transform: rotate(-90deg);' +
-            '    -o-transform: rotate(-90deg);' +
-            '    transform: rotate(-90deg);' +
-            '}' +
-            '</style>' +
-            '<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>' +
-            '<script>' +
-            '');
-        if (this.options.analyzerOpts.doDependencies) {
-            this.depMatrix.print('var depData = ' + JSON.stringify(this.globalDepStat) + ';');
-        }
-        this.depMatrix.addFooter('$().ready(function () {' +
-            'var getAllClassNames = function() {' +
-            'var tmp = {}, ret = [];' +
-            'for (var i in depData) {' +
-            'for (var j in depData[i].depends) {' +
-            'if (tmp[i] === undefined) {' +
-            'tmp[i] = {' +
-            'dep: 0, reqBy: 0' +
-            '};' +
-            '}' +
-            'if (tmp[j] === undefined) {' +
-            'tmp[j] = {' +
-            'dep: 0, reqBy: 0' +
-            '};' +
-            '}' +
-            'tmp[i].dep++;' +
-            'tmp[j].reqBy++;' +
-            '}' +
-            '}' +
-            'for (i in tmp) {' +
-            'ret.push({name: i, dep: tmp[i].dep, reqBy: tmp[i].reqBy});' +
-            '}' +
-            'return ret.sort(function (val1, val2) {' +
-            'return (val1.dep - val1.reqBy) > (val2.dep - val2.reqBy);' +
-            '});' +
-            '};' +
-            'var classNames = getAllClassNames();' +
-            'var line, i, j;' +
-            'line = \'<tr><td></td><td></td>\';' +
-            'for (i = 0; i < classNames.length; i++) {' +
-            'line += \'<td class="index" data-idx="\' + i + \'"><div>\' + (i + 1) + \'</div></td>\';' +
-            '}' +
-            'line += \'</tr>\';' +
-            '$(\'table.matrix\').append(line);' +
-            'for (i = 0; i < classNames.length; i++) {' +
-            'line = \'<tr><td class="name">\' + classNames[i].name + \'</td><td class="index" data-idx="\' + i + \'">' +
-                '\' + (i + 1) + \'</td>\';' +
-            'for (j = 0; j < classNames.length; j++) {' +
-            'var cssClass = i === j ? \'diag\' : \'\';' +
-            'if (depData[classNames[i].name] && depData[classNames[i].name].depends[classNames[j].name]) {' +
-            'line += \'<td class="\' + cssClass + \' used">\';' +
-            'line += \'1\';' +
-            '} else {' +
-            'line += \'<td class="\' + cssClass + \' unused">\';' +
-            'line += \'&nbsp;\';' +
-            '}' +
-            'line += \'</td>\';' +
-            '}' +
-            'line += \'</tr>\';' +
-            '$(\'table.matrix\').append(line);' +
-            '}' +
-            '});' +
-            '</script>' +
-            '</head>' +
-            '<body>' +
-            '<table class="matrix"></table>' +
-            '</body>' +
-            '</html>');
-        this.depMatrix.close();
-
-        this.depFile.addFooter('}');
-        this.depFile.close();
-
-        this.eventFile.addFooter('}');
-        this.eventFile.close();
-
-
-        var cycPerLoc = (this.globalCycComp / this.globalLoc).toFixed(2);
-        var cycPerLocState = cycPerLoc < 0.16 ? 'good' : cycPerLoc > 0.24 ? 'bad' : 'ok';
-        var locPerMc = (this.globalLoc / this.globalMethodCount).toFixed(2);
-        var locPerMcState = locPerMc < 7 ? 'good' : locPerMc > 13 ? 'bad' : 'ok';
-        var mcPerCc = (this.globalMethodCount / this.globalClassCount).toFixed(2);
-        var mcPerCcState = mcPerCc < 4 ? 'good' : mcPerCc > 10 ? 'bad' : 'ok';
-
-        this.statsFile.addHeader('<!DOCTYPE html>' +
-            '<html>' +
-            '<head>' +
-            '<style>' +
-            '.good {' +
-            '    background-color: #0c0;' +
-            '}' +
-            '.ok {' +
-            '    background-color: #0cc;' +
-            '}' +
-            '.bad {' +
-            '    background-color: #c00;' +
-            '}' +
-            '</style>' +
-            '</head>' +
-            '<body>');
-
-        if (this.options.analyzerOpts.doStatistics) {
-            this.statsFile.print('<table>' +
-                '<tr>' +
-                '<td>CYC</td>' +
-                '<td>' + this.globalCycComp + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td>LOC</td>' +
-                '<td>' + this.globalLoc + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td>Methods</td>' +
-                '<td>' + this.globalMethodCount + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td>Classes</td>' +
-                '<td>' + this.globalClassCount + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td>CYC/LOC</td>' +
-                '<td class="' + cycPerLocState + '">' + cycPerLoc + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td>LOC/Methods</td>' +
-                '<td class="' + locPerMcState + '">' + locPerMc + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td>Methods/Classes</td>' +
-                '<td class="' + mcPerCcState + '">' + mcPerCc + '</td>' +
-                '</tr>' +
-                '</table>');
-        }
-        this.statsFile.addFooter('</body>' +
-            '</html>'
-        );
-        this.statsFile.close();
     };
 
     exports.esprima_analyzer = esprima_analyzer;

@@ -28,7 +28,7 @@ var options = {
         doOpenAjaxEvents: true,
         doCyclomaticComplexity: true,
         cycCompThreshold: 10,
-        shortVarWhitelist: ['me', 'x', 'y']
+        shortVarWhitelist: ['me', 'x', 'y', 'to']
     },
     pathPrefix: '',
     fileWhitelist: ['<proj>'],

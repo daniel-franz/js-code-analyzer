@@ -16,6 +16,12 @@ steal('../js/esprima_analyzer.js', function () {
                     close: function () {}
                 };
             };
+            this.reporters = {
+                dependencyReporter: reporters.dependency.dot(mockFile('depGraph')),
+                checkStyleReporter: reporters.checkstyle.xml(mockFile('checkStyle')),
+                eventReporter: reporters.event.dot(mockFile('eventGraph')),
+                statisticsReporter: reporters.statistics.html(mockFile('statistics'))
+            };
             this.analyzer = new exports.esprima_analyzer({
                 analyzerOpts: {
                     doStatistics: true,
@@ -24,13 +30,7 @@ steal('../js/esprima_analyzer.js', function () {
                     doCyclomaticComplexity: true,
                     cycCompThreshold: 0
                 }
-            }, {
-                depGraph: mockFile('depGraph'),
-                checkStyleReporter: reporters.xmlCheckstyle(mockFile('checkStyle')),
-                depMatrix: mockFile('depMatrix'),
-                eventGraph: mockFile('eventGraph'),
-                statistics: mockFile('statistics')
-            });
+            }, this.reporters);
         },
         teardown: function () {
             this.analyzer.destroy();
@@ -73,7 +73,8 @@ steal('../js/esprima_analyzer.js', function () {
         equal(this.checkStyle[7], '    <error line="1" column="67" severity="warning" ' +
             'message="Excessive cyclomatic complexity: 2" source="esprima.complexity" evidence="test2"/>\n');
 
-        equal(this.analyzer.globalCycComp, 20);
+        this.reporters.statisticsReporter.close();
+        ok(this.statistics[0] && /<td>CYC<\/td><td>20<\/td>/.test(this.statistics[0]));
     });
 
     test('Code size metrics', function () {
@@ -89,9 +90,10 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.analyzer.globalLoc, 9);
-        equal(this.analyzer.globalMethodCount, 2);
-        equal(this.analyzer.globalClassCount, 1);
+        this.reporters.statisticsReporter.close();
+        ok(this.statistics[0] && /<td>LOC<\/td><td>9<\/td>/.test(this.statistics[0]));
+        ok(this.statistics[0] && /<td>Methods<\/td><td>2<\/td>/.test(this.statistics[0]));
+        ok(this.statistics[0] && /<td>Classes<\/td><td>1<\/td>/.test(this.statistics[0]));
 
         this.analyzer.parse(
             'Test.ClassName(\'Test.DerivedClassName\', {\n' +
@@ -108,9 +110,10 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.analyzer.globalLoc, 21);
-        equal(this.analyzer.globalMethodCount, 5);
-        equal(this.analyzer.globalClassCount, 2);
+        this.reporters.statisticsReporter.close();
+        ok(this.statistics[1] && /<td>LOC<\/td><td>21<\/td>/.test(this.statistics[1]));
+        ok(this.statistics[1] && /<td>Methods<\/td><td>5<\/td>/.test(this.statistics[1]));
+        ok(this.statistics[1] && /<td>Classes<\/td><td>2<\/td>/.test(this.statistics[1]));
     });
 
     test('short variables', function () {
@@ -222,7 +225,6 @@ steal('../js/esprima_analyzer.js', function () {
         );
 
         equal(this.eventGraph[0], '    \"Test.SenderControl\" -> \"test.event\";\n');
-        equal(this.eventGraph[1], '    \"test.event\" [shape=box];\n');
 
         this.analyzer.parse(
             'can.control(\'Test.ReceiverControl\', {\n' +
@@ -235,8 +237,7 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.eventGraph[2], '    \"test.event\" -> \"Test.ReceiverControl\";\n');
-        equal(this.eventGraph[3], '    \"test.event\" [shape=box];\n');
+        equal(this.eventGraph[1], '    \"test.event\" -> \"Test.ReceiverControl\";\n');
 
         this.analyzer.parse(
             'can.control(\'Test.SecondReceiverControl\', {\n' +
@@ -249,8 +250,10 @@ steal('../js/esprima_analyzer.js', function () {
             '});'
         );
 
-        equal(this.eventGraph[4], '    \"test.event\" -> \"Test.SecondReceiverControl\";\n');
-        equal(this.eventGraph[5], '    \"test.event\" [shape=box];\n');
+        equal(this.eventGraph[2], '    \"test.event\" -> \"Test.SecondReceiverControl\";\n');
 
+        this.reporters.eventReporter.close();
+
+        equal(this.eventGraph[3], '    \"test.event\" [shape=box];\n');
     });
 });

@@ -41,11 +41,10 @@ steal('../js/jslint_analyzer.js', function () {
                     ]
                 }
             }, {
-                depGraph: mockFile('depGraph'),
-                checkStyleReporter: reporters.xmlCheckstyle(mockFile('checkStyle')),
-                depMatrix: mockFile('depMatrix'),
-                eventGraph: mockFile('eventGraph'),
-                statistics: mockFile('statistics')
+                dependencyReporter: reporters.dependency.dot(mockFile('depGraph')),
+                checkStyleReporter: reporters.checkstyle.xml(mockFile('checkStyle')),
+                eventReporter: reporters.event.dot(mockFile('eventGraph')),
+                statisticsReporter: reporters.statistics.html(mockFile('statistics'))
             });
         },
         teardown: function () {

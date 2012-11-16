@@ -8,28 +8,28 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             var output, checkstyleReporter;
             if (options.consoleOutput) {
                 output = ioDrivers.openConsole;
-                checkstyleReporter = reporters.plainCheckstyle;
+                checkstyleReporter = reporters.checkstyle.plain;
             } else {
                 output = ioDrivers.openFile;
-                checkstyleReporter = reporters.xmlCheckstyle;
+                checkstyleReporter = reporters.checkstyle.xml;
             }
             if (!analyzers.data.files) {
                 analyzers.data.files = {};
             }
-            if (!analyzers.data.files.depGraph) {
-                analyzers.data.files.depGraph = output('dependencies.dot');
+            if (!analyzers.data.files.dependencyReporter) {
+                analyzers.data.files.dependencyReporter = reporters.composite([
+                    reporters.dependency.dot(output('dependencies.dot')),
+                    reporters.dependency.html(output('js-dependencies.html'))
+                ]);
             }
-            if (!analyzers.data.files.eventGraph) {
-                analyzers.data.files.eventGraph = output('openajax-events.dot');
+            if (!analyzers.data.files.eventReporter) {
+                analyzers.data.files.eventReporter = reporters.event.dot(output('openajax-events.dot'));
             }
             if (!analyzers.data.files.checkStyleReporter) {
                 analyzers.data.files.checkStyleReporter = checkstyleReporter(output('checkstyle_js.xml'));
             }
-            if (!analyzers.data.files.depMatrix) {
-                analyzers.data.files.depMatrix = output('js-dependencies.html');
-            }
-            if (!analyzers.data.files.statistics) {
-                analyzers.data.files.statistics = output('js-statistics.html');
+            if (!analyzers.data.files.statisticsReporter) {
+                analyzers.data.files.statisticsReporter = reporters.statistics.html(output('js-statistics.html'));
             }
             return new analyzers[type](options, analyzers.data.files);
         },
