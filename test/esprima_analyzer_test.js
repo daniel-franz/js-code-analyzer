@@ -33,6 +33,9 @@ steal('../js/esprima_analyzer.js', function () {
             }, this.reporters);
         },
         teardown: function () {
+            for (var i in this.reporters) {
+                this.reporters[i].close();
+            }
             this.analyzer.destroy();
             this.analyzer = null;
         }

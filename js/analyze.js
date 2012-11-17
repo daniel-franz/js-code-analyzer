@@ -19,7 +19,8 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
             if (!analyzers.data.files.dependencyReporter) {
                 analyzers.data.files.dependencyReporter = reporters.composite([
                     reporters.dependency.dot(output('dependencies.dot')),
-                    reporters.dependency.html(output('js-dependencies.html'))
+                    reporters.dependency.html(output('js-dependencies.html')),
+                    reporters.dependency.htmlD3(output('js-dependencies-d3.html'))
                 ]);
             }
             if (!analyzers.data.files.eventReporter) {
