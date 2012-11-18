@@ -30,7 +30,10 @@ steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer
                 analyzers.data.files.checkStyleReporter = checkstyleReporter(output('checkstyle_js.xml'));
             }
             if (!analyzers.data.files.statisticsReporter) {
-                analyzers.data.files.statisticsReporter = reporters.statistics.html(output('js-statistics.html'));
+                analyzers.data.files.statisticsReporter = reporters.composite([
+                    reporters.statistics.html(output('js-statistics.html')),
+                    reporters.statistics.csv(output('js-statistics.csv'))
+                ]);
             }
             return new analyzers[type](options, analyzers.data.files);
         },

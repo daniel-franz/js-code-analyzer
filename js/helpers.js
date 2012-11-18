@@ -708,7 +708,54 @@ var reporters = {
                     file.close();
                 }
             }
+        },
+        csv: function (file) {
+            file.addHeader('CYC,LOC,Methods,Classes,CYC/LOC,LOC/Methods,Methods/Classes\n');
+            var stats = {
+                cycComp: 0,
+                loc: 0,
+                methods: 0,
+                classes: 0
+            };
+            return {
+                addCycloComplexity: function (count) {
+                    stats.cycComp += count;
+                },
+                addLinesOfCode: function (count) {
+                    stats.loc += count;
+                },
+                addMethodCount: function (count) {
+                    stats.methods += count;
+                },
+                addClassCount: function (count) {
+                    stats.classes += count;
+                },
+                close: function () {
+                    var statsAdded = false;
+                    for (var i in stats) {
+                        if (stats[i]) {
+                            statsAdded = true;
+                            break;
+                        }
+                    }
+                    if (statsAdded) {
+                        var cycPerLoc = (stats.cycComp / stats.loc).toFixed(2);
+                        var locPerMc = (stats.loc / stats.methods).toFixed(2);
+                        var mcPerCc = (stats.methods / stats.classes).toFixed(2);
+                        file.print(stats.cycComp + ',' +
+                            stats.loc + ',' +
+                            stats.methods + ',' +
+                            stats.classes + ',' +
+                            cycPerLoc + ',' +
+                            locPerMc + ',' +
+                            mcPerCc + '\n'
+                        );
+                    }
+                    file.close();
+                }
+            }
         }
+
     }
 };
 
