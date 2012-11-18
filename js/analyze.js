@@ -1,7 +1,8 @@
 /*global ioDrivers: true, reporters: true, extend: true, Envjs: true, readFile: true, readUrl: true */
 
 var exports = {};
-steal('steal/build', './helpers.js', './jslint_analyzer.js', './esprima_analyzer.js', function () {
+steal('steal/build', './helpers.js', './reporters/reporters.js',
+    './jslint_analyzer.js', './esprima_analyzer.js', function () {
     var analyzers = {
         data: {},
         factory: function (type, options) {
