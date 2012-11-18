@@ -1,4 +1,4 @@
-steal('../js/esprima_analyzer.js', function () {
+steal('../js/reporters/reporters.js', '../js/esprima_analyzer.js', function () {
     module('Esprima analyzer', {
         setup: function () {
             var me = this;

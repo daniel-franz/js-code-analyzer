@@ -1,4 +1,4 @@
-steal('../js/jslint_analyzer.js', function () {
+steal('../js/reporters/reporters.js', '../js/jslint_analyzer.js', function () {
     module('JSLint analyzer', {
         setup: function () {
             var me = this;

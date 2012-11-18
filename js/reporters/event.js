@@ -1,6 +1,6 @@
 reporters.event = {
     dot: function (file) {
-        file.addHeader('digraph Dependencies {\n');
+        file.addHeader('digraph Events {\n');
         file.addHeader('    rankdir=LR\n');
         file.addFooter('}');
         var events = {};
