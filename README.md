@@ -21,7 +21,8 @@ This currently only works with Javascript MVC/DoneJS.
 5. Analyze output:
   - **checkstyle_js.xml**: Checkstyle-compatible
   - **js-dependencies.html**: file containing dependency matrix
-  - **js-dependencies.svg**: file containing dependency graph
+  - **js-dependencies-d3.html**: file containing collapsible dependency graph
+  - **js-dependencies.svg**: file containing detailed dependency graph
   - **openajax-events.svg**: file containing graph showing OpenAjax-events
   - **js-statistics.html**: file containing global code size-metrics
 
