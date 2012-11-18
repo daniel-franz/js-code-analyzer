@@ -7,7 +7,7 @@ reporters.composite = function (deps) {
                     deps[i][name].apply(deps[i][name], arguments);
                 }
             }
-        }
+        };
     };
     for (var i = 0; i < deps.length; i++) {
         for (var j in deps[i]) {

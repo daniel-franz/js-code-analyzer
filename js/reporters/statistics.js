@@ -35,7 +35,7 @@
                 }
                 file.close();
             }
-        }
+        };
     }
 
     reporters.statistics = {
@@ -108,4 +108,4 @@
             });
         }
     };
-})();
+}());

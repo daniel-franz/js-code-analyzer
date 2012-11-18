@@ -116,8 +116,8 @@
                 'line += \'</tr>\';' +
                 '$(\'table.matrix\').append(line);' +
                 'for (i = 0; i < classNames.length; i++) {' +
-                'line = \'<tr><td class="name">\' + classNames[i].name + \'</td><td class="index" data-idx="\' + i + \'">' +
-                    '\' + (i + 1) + \'</td>\';' +
+                'line = \'<tr><td class="name">\' + classNames[i].name + \'</td>' +
+                    '<td class="index" data-idx="\' + i + \'">\' + (i + 1) + \'</td>\';' +
                 'for (j = 0; j < classNames.length; j++) {' +
                 'var cssClass = i === j ? \'diag\' : \'\';' +
                 'if (depData[classNames[i].name] && depData[classNames[i].name].depends[classNames[j].name]) {' +
@@ -374,14 +374,16 @@
                 '    .attr("transform", "translate(" + rx + "," + ry + ")");\n' +
             '    svg.append("svg:path")\n' +
                 '    .attr("class", "arc")\n' +
-                '    .attr("d", d3.svg.arc().outerRadius(ry - 120).innerRadius(0).startAngle(0).endAngle(2 * Math.PI));\n' +
+                '    .attr("d", d3.svg.arc().outerRadius(ry - 120)' +
+                        '.innerRadius(0).startAngle(0).endAngle(2 * Math.PI));\n' +
             '    nodes = cluster.nodes(packages.root(nodes || classes));\n' +
             '    var links = packages.imports(nodes),\n' +
                 '    splines = bundle(links);\n' +
             '    var path = svg.selectAll("path.link")\n' +
                 '    .data(links)\n' +
                 '    .enter().append("svg:path")\n' +
-                '    .attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })\n' +
+                '    .attr("class", function(d) { ' +
+                        'return "link source-" + d.source.key + " target-" + d.target.key; })\n' +
                 '    .attr("d", function(d, i) { return line(splines[i]); });\n' +
             '    svg.selectAll("g.node")\n' +
                 '    .data(nodes.filter(function (d) {\n' +
@@ -440,4 +442,4 @@
             return depDataPrinter(file);
         }
     };
-})();
+}());
