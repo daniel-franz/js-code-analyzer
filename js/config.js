@@ -29,7 +29,7 @@ var options = {
         doCyclomaticComplexity: true,
         cycCompThreshold: 10,
         shortVarWhitelist: ['me', 'x', 'y', 'to'],
-        aliases: [['$', 'jQuery']]
+        aliases: [['$.', 'jQuery.'], ['', 'window.']]
     },
     pathPrefix: '',
     fileWhitelist: ['<proj>'],
