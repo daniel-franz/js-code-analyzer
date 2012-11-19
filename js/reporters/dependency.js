@@ -344,8 +344,8 @@
         '    <script>\n' +
         '    (function () {\n' +
             '    (function update (nodes) {\n' +
-            '    var w = 1280,\n' +
-                '    h = 800,\n' +
+            '    var w = window.innerWidth,\n' +
+                '    h = window.innerHeight,\n' +
                 '    rx = w / 2,\n' +
                 '    ry = h / 2,\n' +
                 '    m0,\n' +
