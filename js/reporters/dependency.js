@@ -269,7 +269,7 @@
         '    (function () {\n' +
             '    for (var i in depData) {\n' +
                 '    for (var j in depData[i].depends) {\n' +
-                    '    if (!j in depData) {\n' +
+                    '    if (!(j in depData)) {\n' +
                         '    depData[j] = {depends: {}};\n' +
                     '    }\n' +
                 '    }\n' +
@@ -286,7 +286,7 @@
                     '    size: 0\n' +
                 '    });\n' +
             '    }\n' +
-        '    })();\n' +
+        '    }());\n' +
         '    </script>\n' +
         '    <script>(function() {\n' +
             '    packages = {\n' +
@@ -340,7 +340,7 @@
                     '    return imports;\n' +
                 '    }\n' +
             '    };\n' +
-        '    })(); </script>\n' +
+        '    }()); </script>\n' +
         '    <script>\n' +
         '    (function () {\n' +
             '    (function update (nodes) {\n' +
@@ -434,8 +434,8 @@
             '    function toggle(d) {\n' +
                 '    d.last = !d.last;\n' +
             '    }\n' +
-            '    })();\n' +
-        '    })();\n' +
+            '    }());\n' +
+        '    }());\n' +
         '    </script>\n' +
         '    </body></html>'
             );

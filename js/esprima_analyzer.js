@@ -205,6 +205,15 @@ steal('./esprima.js', './helpers.js', function () {
     analyzeDepMatrix = function (ast, success) {
         var className, tmp, inherit;
         var ret = {};
+        var analyze = function (ast, type) {
+            if (className && ast && ast.type === 'MemberExpression') {
+                tmp = parseMemberExpression({ast: ast});
+                if (tmp && tmp !== '$') {
+                    ret[className].depends[tmp] = ret[className].depends[tmp] || {};
+                    ret[className].depends[tmp][type] = true;
+                }
+            }
+        };
 
         walker.subscribe('CallExpression', function (ast) {
             if (!className && isClassName(ast)) {
@@ -226,51 +235,21 @@ steal('./esprima.js', './helpers.js', function () {
                     }
                 }
                 for (var i = 0; i < ast['arguments'].length; i++) {
-                    if (ast['arguments'][i].type === 'MemberExpression') {
-                        tmp = parseMemberExpression({ast: ast['arguments'][i]});
-                        if (tmp && tmp !== '$') {
-                            ret[className].depends[tmp] = ret[className].depends[tmp] || {};
-                            ret[className].depends[tmp].other = true;
-                        }
-                    }
+                    analyze(ast['arguments'][i], 'other');
                 }
             }
         });
         walker.subscribe('NewExpression', function (ast) {
-            if (className) {
-                tmp = parseMemberExpression({ast: ast.callee});
-                if (tmp && tmp !== '$') {
-                    ret[className].depends[tmp] = ret[className].depends[tmp] || {};
-                    ret[className].depends[tmp].instanciate = true;
-                }
-            }
+            analyze(ast.callee, 'instanciate');
         });
         walker.subscribe('VariableDeclarator', function (ast) {
-            if (className && ast.init && ast.init.type === 'MemberExpression') {
-                tmp = parseMemberExpression({ast: ast.init});
-                if (tmp && tmp !== '$') {
-                    ret[className].depends[tmp] = ret[className].depends[tmp] || {};
-                    ret[className].depends[tmp].other = true;
-                }
-            }
+            analyze(ast.init, 'other');
         });
         walker.subscribe('AssignmentExpression', function (ast) {
-            if (className && ast.right && ast.right.type === 'MemberExpression') {
-                tmp = parseMemberExpression({ast: ast.right});
-                if (tmp && tmp !== '$') {
-                    ret[className].depends[tmp] = ret[className].depends[tmp] || {};
-                    ret[className].depends[tmp].other = true;
-                }
-            }
+            analyze(ast.right, 'other');
         });
         walker.subscribe('Property', function (ast) {
-            if (className && ast.value && ast.value.type === 'MemberExpression') {
-                tmp = parseMemberExpression({ast: ast.value});
-                if (tmp && tmp !== '$') {
-                    ret[className].depends[tmp] = ret[className].depends[tmp] || {};
-                    ret[className].depends[tmp].other = true;
-                }
-            }
+            analyze(ast.value, 'other');
         });
         walker.callbacks.push(function () {
             success(ret);
