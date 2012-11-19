@@ -300,7 +300,7 @@
                             '    if (name.length) {\n' +
                                 '    node.parent = find(name.substring(0, i = name.lastIndexOf(".")));\n' +
                                 '    node.parent.children.push(node);\n' +
-                                '    node.key = name.replace(/\\./g, "-");\n' +
+                                '    node.key = name.replace(/\\./g, "-").replace("$", "dollar");\n' +
                             '    }\n' +
                         '    }\n' +
                         '    return node;\n' +
