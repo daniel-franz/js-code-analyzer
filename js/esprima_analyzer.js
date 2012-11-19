@@ -254,6 +254,15 @@ steal('./esprima.js', './helpers.js', function () {
                 }
             }
         });
+        walker.subscribe('AssignmentExpression', function (ast) {
+            if (className && ast.right && ast.right.type === 'MemberExpression') {
+                tmp = parseMemberExpression({ast: ast.right});
+                if (tmp && tmp !== '$') {
+                    ret[className].depends[tmp] = ret[className].depends[tmp] || {};
+                    ret[className].depends[tmp].other = true;
+                }
+            }
+        });
         walker.subscribe('Property', function (ast) {
             if (className && ast.value && ast.value.type === 'MemberExpression') {
                 tmp = parseMemberExpression({ast: ast.value});

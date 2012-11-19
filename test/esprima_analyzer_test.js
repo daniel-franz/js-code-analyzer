@@ -206,6 +206,8 @@ steal('../js/reporters/reporters.js', '../js/esprima_analyzer.js', function () {
             'Test.ClassName(\'Test.SecondDerivedClassName\', {\n' +
                 'testMethod2: function () {\n' +
                     'TestMethod.test(i, TestMethod2.Test.test)\n' +
+                    'var myTest = TestMethod3.Test;\n' +
+                    'this.test = TestMethod3.Test2;\n' +
                 '}\n' +
             '}, {\n' +
             '});'
@@ -214,7 +216,9 @@ steal('../js/reporters/reporters.js', '../js/esprima_analyzer.js', function () {
         equal(this.depGraph[7], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
         equal(this.depGraph[8], '    \"Test.SecondDerivedClassName\" -> \"TestMethod\" [color=red];\n');
         equal(this.depGraph[9], '    \"Test.SecondDerivedClassName\" -> \"TestMethod2.Test\" [];\n');
-        equal(this.depGraph[10], undefined);
+        equal(this.depGraph[10], '    \"Test.SecondDerivedClassName\" -> \"TestMethod3.Test\" [];\n');
+        equal(this.depGraph[11], '    \"Test.SecondDerivedClassName\" -> \"TestMethod3.Test2\" [];\n');
+        equal(this.depGraph[12], undefined);
     });
 
     test('OpenAjax events', function () {
