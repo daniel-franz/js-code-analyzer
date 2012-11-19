@@ -28,7 +28,8 @@ var options = {
         doOpenAjaxEvents: true,
         doCyclomaticComplexity: true,
         cycCompThreshold: 10,
-        shortVarWhitelist: ['me', 'x', 'y', 'to']
+        shortVarWhitelist: ['me', 'x', 'y', 'to'],
+        aliases: [['$', 'jQuery']]
     },
     pathPrefix: '',
     fileWhitelist: ['<proj>'],

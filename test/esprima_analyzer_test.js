@@ -28,7 +28,8 @@ steal('../js/reporters/reporters.js', '../js/esprima_analyzer.js', function () {
                     doDependencies: true,
                     doOpenAjaxEvents: true,
                     doCyclomaticComplexity: true,
-                    cycCompThreshold: 0
+                    cycCompThreshold: 0,
+                    aliases: [['$', 'jQuery']]
                 }
             }, this.reporters);
         },
@@ -219,6 +220,21 @@ steal('../js/reporters/reporters.js', '../js/esprima_analyzer.js', function () {
         equal(this.depGraph[10], '    \"Test.SecondDerivedClassName\" -> \"TestMethod3.Test\" [];\n');
         equal(this.depGraph[11], '    \"Test.SecondDerivedClassName\" -> \"TestMethod3.Test2\" [];\n');
         equal(this.depGraph[12], undefined);
+
+        this.analyzer.parse(
+            'GlobalSecondDerivedClassName = Test.ClassName(\'Test.SecondDerivedClassName\', {\n' +
+                'testMethod2: function () {\n' +
+                    '$.Class(jQuery.Class);\n' +
+                    'GlobalSecondDerivedClassName.testMethod();\n' +
+                '}\n' +
+            '}, {\n' +
+            '});'
+        );
+
+        equal(this.depGraph[12], '    \"Test.SecondDerivedClassName\" -> \"Test.ClassName\" [style=bold];\n');
+        equal(this.depGraph[13], '    \"Test.SecondDerivedClassName\" -> \"$.Class\" [color=red];\n');
+        equal(this.depGraph[14], '    \"Test.SecondDerivedClassName\" -> \"Test.SecondDerivedClassName\" [color=red];\n');
+        equal(this.depGraph[15], undefined);
     });
 
     test('OpenAjax events', function () {

@@ -61,7 +61,15 @@ steal('./esprima.js', './helpers.js', function () {
                 }
             }
         });
-        return ret.join('.');
+        var tmp = ret.join('.');
+        if (aliases) {
+            for (var i = 0; i < aliases.length; i++) {
+                for (var j = 1; j < aliases[i].length; j++) {
+                    tmp = tmp.replace(new RegExp('^' + aliases[i][j]), aliases[i][0]);
+                }
+            }
+        }
+        return tmp;
     },
     analyzeCycComp = function (ast, success) {
         var ret = {};
@@ -203,7 +211,7 @@ steal('./esprima.js', './helpers.js', function () {
         });
     },
     analyzeDepMatrix = function (ast, success) {
-        var className, tmp, inherit;
+        var className, tmp, inherit, lastAss;
         var ret = {};
         var analyze = function (ast, type) {
             if (className && ast && ast.type === 'MemberExpression') {
@@ -222,6 +230,12 @@ steal('./esprima.js', './helpers.js', function () {
                     depends: {}
                 };
                 inherit = true;
+                if (lastAss && lastAss.right === ast) {
+                    tmp = parseMemberExpression({ast: lastAss.left});
+                    if (tmp && tmp !== '$') {
+                        aliases.push([className, tmp]);
+                    }
+                }
             }
             if (className) {
                 tmp = parseMemberExpression({ast: ast.callee});
@@ -247,6 +261,9 @@ steal('./esprima.js', './helpers.js', function () {
         });
         walker.subscribe('AssignmentExpression', function (ast) {
             analyze(ast.right, 'other');
+            if (!className) {
+                lastAss = ast;
+            }
         });
         walker.subscribe('Property', function (ast) {
             analyze(ast.value, 'other');
@@ -287,12 +304,14 @@ steal('./esprima.js', './helpers.js', function () {
             success(ret);
         });
     };
+    var aliases;
     var esprima_analyzer = function (options, files) {
         this.options = options;
         this.dependencyReporter = files.dependencyReporter;
         this.checkStyleReporter = files.checkStyleReporter;
         this.eventReporter = files.eventReporter;
         this.statisticsReporter = files.statisticsReporter;
+        aliases = options.analyzerOpts.aliases;
     };
 
     esprima_analyzer.prototype.parse = function (out) {
