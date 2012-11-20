@@ -67,9 +67,12 @@ var handleCommandLineArgs = function (args) {
     if (args[0]) {
         if (args[0] === '--help' || args[0] === '-h') {
             myConsole.print('analyzer/bin/analyze <options> <files>');
-            myConsole.print('   -c           console output');
-            myConsole.print('   -i      interactive console');
-            myConsole.print('   -h                this help');
+            myConsole.print('   -c              console output');
+            myConsole.print('   -i         interactive console');
+            myConsole.print('   -s                      silent');
+            myConsole.print('   -no-cyclo    disable cycloComp');
+            myConsole.print('   -no-stat    disable statistics');
+            myConsole.print('   -h                   this help');
             return;
         }
         for (var i = 0; i < args.length; i++) {

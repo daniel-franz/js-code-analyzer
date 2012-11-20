@@ -6,13 +6,18 @@ steal('steal/build', './helpers.js', './reporters/reporters.js',
     var analyzers = {
         data: {},
         factory: function (type, options) {
-            var output, checkstyleReporter;
+            var output, checkstyleReporter, statisticsReporter;
             if (options.consoleOutput) {
                 output = ioDrivers.openConsole;
                 checkstyleReporter = reporters.checkstyle.plain;
+                statisticsReporter = reporters.statistics.plain(output());
             } else {
                 output = ioDrivers.openFile;
                 checkstyleReporter = reporters.checkstyle.xml;
+                statisticsReporter = reporters.composite([
+                    reporters.statistics.html(output('js-statistics.html')),
+                    reporters.statistics.csv(output('js-statistics.csv'))
+                ]);
             }
             if (!analyzers.data.files) {
                 analyzers.data.files = {};
@@ -31,10 +36,7 @@ steal('steal/build', './helpers.js', './reporters/reporters.js',
                 analyzers.data.files.checkStyleReporter = checkstyleReporter(output('checkstyle_js.xml'));
             }
             if (!analyzers.data.files.statisticsReporter) {
-                analyzers.data.files.statisticsReporter = reporters.composite([
-                    reporters.statistics.html(output('js-statistics.html')),
-                    reporters.statistics.csv(output('js-statistics.csv'))
-                ]);
+                analyzers.data.files.statisticsReporter = statisticsReporter;
             }
             return new analyzers[type](options, analyzers.data.files);
         },

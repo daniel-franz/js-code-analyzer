@@ -37,15 +37,20 @@ steal('analyzer/js/config.js', 'analyzer/js/analyze.js', 'analyzer/js/helpers.js
     }
 
     options.consoleOutput = commandLineOpts['-i'] || commandLineOpts['-c'];
+    options.silent = commandLineOpts['-s'];
 
     if (options.consoleOutput) {
         var ret;
-        options.analyzerOpts.doStatistics = false;
+        options.analyzerOpts.doStatistics = !commandLineOpts['-no-stat'];
         options.analyzerOpts.doDependencies = false;
         options.analyzerOpts.doOpenAjaxEvents = false;
-        options.analyzerOpts.doCyclomaticComplexity = false;
+        options.analyzerOpts.doCyclomaticComplexity = !commandLineOpts['-no-cyclo'];
 
         var myConsole = ioDrivers.openConsole();
+
+        if (!options.silent) {
+            myConsole.print('Starting to analyze...');
+        }
         do {
             ret = steal.analyze(urls, options);
         } while (
@@ -54,6 +59,9 @@ steal('analyzer/js/config.js', 'analyzer/js/analyze.js', 'analyzer/js/helpers.js
             myConsole.read() != 'x' &&
             ret !== false
         );
+        if (!options.silent) {
+            myConsole.print('Finished');
+        }
     } else {
         steal.analyze(urls, options);
     }

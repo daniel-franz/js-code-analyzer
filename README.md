@@ -32,6 +32,9 @@ analyzer/bin/analyze <options> <files>
 ###### Options
 - -h for help
 - -i for interactive mode (re-check on key-press)
+- -s for silent-mode
+- -no-cyclo to disable cyclomatic complexity-check
+- -no-stat to disable printing statistics
 - -c for command-line output
 
 ## Credits
