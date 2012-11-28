@@ -27,6 +27,9 @@ load("steal/rhino/rhino.js");
 
 steal('analyzer/js/config.js', 'analyzer/js/analyze.js', 'analyzer/js/helpers.js').then(function () {
     var processedCLOptions = handleCommandLineArgs(_args);
+    if (!processedCLOptions) {
+        return;
+    }
     var commandLineOpts = processedCLOptions.commandLineOpts;
     var urls = processedCLOptions.urls;
 
